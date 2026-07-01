@@ -56,7 +56,6 @@
             border-radius: 5px;
         }
 
-        /* Style identique pour le bouton d'import */
         button, label.import-btn {
             padding: 8px 15px;
             font-size: 16px;
@@ -78,7 +77,6 @@
             cursor: not-allowed;
         }
 
-        /* Cacher l'input file natif */
         #fileInput {
             display: none;
         }
@@ -200,8 +198,8 @@
             <button id="startBtn">Démarrer</button>
             <button id="pauseBtn" disabled>Pause</button>
             <button id="continueBtn" disabled>Continuer</button>
-            
-            <!-- Bouton pour importer le fichier -->
+            <!-- Nouveau bouton Précédent -->
+            <button id="prevBtn" disabled>Précédent</button>
             <label for="fileInput" class="import-btn">Importer fichier</label>
             <input type="file" id="fileInput" accept=".txt">
         </div>
@@ -252,11 +250,10 @@
         const startBtn = document.getElementById('startBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const continueBtn = document.getElementById('continueBtn');
+        const prevBtn = document.getElementById('prevBtn'); // Référence du bouton précédent
         const sequenceInput = document.getElementById('sequenceInput');
         const countdownVal = document.getElementById('countdownVal');
         const progressBar = document.getElementById('progressBar');
-        
-        // Référence pour l'import de fichier
         const fileInput = document.getElementById('fileInput');
 
         function parseSequenceInput(text) {
@@ -275,6 +272,7 @@
             return parsedSeq;
         }
 
+        // Affiche uniquement l'étape actuelle et la prochaine en se basant sur currentIndex
         function updateDisplay() {
             if (sequence.length === 0) return;
             
@@ -300,8 +298,6 @@
             } else {
                 droiteNext.classList.remove('changed');
             }
-            
-            currentIndex = nextIndex;
         }
 
         function tick() {
@@ -320,6 +316,8 @@
             progressBar.style.width = Math.min(100, progressPercent) + '%';
 
             if (elapsed >= intervalTime) {
+                // Avance l'index puis met à jour l'affichage
+                currentIndex = (currentIndex + 1) % sequence.length;
                 updateDisplay();
                 lastUpdateTime = Date.now();
             }
@@ -330,14 +328,17 @@
                 startBtn.disabled = false;
                 pauseBtn.disabled = false;
                 continueBtn.disabled = true;
+                prevBtn.disabled = false;
             } else if (state === 'paused') {
                 startBtn.disabled = false;
                 pauseBtn.disabled = true;
                 continueBtn.disabled = false;
+                prevBtn.disabled = false;
             } else {
                 startBtn.disabled = false;
                 pauseBtn.disabled = true;
                 continueBtn.disabled = true;
+                prevBtn.disabled = true;
             }
         }
 
@@ -387,26 +388,34 @@
             }
         }
 
+        // Nouvelle fonction pour reculer d'une étape
+        function stepBack() {
+            if (sequence.length === 0) return;
+            
+            // Recule l'index. Si on est à 0, on va au dernier élément de la séquence.
+            currentIndex = (currentIndex - 1 + sequence.length) % sequence.length;
+            
+            updateDisplay();
+            // On réinitialise le chronomètre pour l'étape sur laquelle on vient de revenir
+            lastUpdateTime = Date.now();
+        }
+
         startBtn.addEventListener('click', startAnimation);
         pauseBtn.addEventListener('click', pauseAnimation);
         continueBtn.addEventListener('click', continueAnimation);
+        prevBtn.addEventListener('click', stepBack); // Écouteur pour le bouton précédent
 
-        // Événement pour lire le fichier importé
         fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    // Remplir la zone de texte avec le contenu du fichier
                     sequenceInput.value = e.target.result;
-                    // Optionnel : on déclenche le démarrage automatiquement
-                    // startAnimation(); 
                 };
                 reader.readAsText(file);
             }
         });
 
-        // Raccourci clavier Espace
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
