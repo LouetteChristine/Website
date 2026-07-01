@@ -56,7 +56,8 @@
             border-radius: 5px;
         }
 
-        button {
+        /* Style identique pour le bouton d'import */
+        button, label.import-btn {
             padding: 8px 15px;
             font-size: 16px;
             cursor: pointer;
@@ -65,15 +66,21 @@
             border: none;
             border-radius: 5px;
             transition: background-color 0.2s;
+            display: inline-block;
         }
 
-        button:hover {
+        button:hover, label.import-btn:hover {
             background-color: #004494;
         }
 
         button:disabled {
             background-color: #aaa;
             cursor: not-allowed;
+        }
+
+        /* Cacher l'input file natif */
+        #fileInput {
+            display: none;
         }
 
         .display-area {
@@ -111,7 +118,19 @@
             color: #0056b3;
         }
 
-        /* Zone du bas : Compteur et Décompte */
+        .hand-next {
+            font-size: 2rem;
+            font-weight: normal;
+            color: #ccc;
+            margin-top: 15px;
+            min-height: 2.5rem;
+            transition: color 0.3s;
+        }
+
+        .hand-next.changed {
+            color: #dc3545;
+        }
+
         .bottom-info {
             width: 100%;
             max-width: 800px;
@@ -181,6 +200,10 @@
             <button id="startBtn">Démarrer</button>
             <button id="pauseBtn" disabled>Pause</button>
             <button id="continueBtn" disabled>Continuer</button>
+            
+            <!-- Bouton pour importer le fichier -->
+            <label for="fileInput" class="import-btn">Importer fichier</label>
+            <input type="file" id="fileInput" accept=".txt">
         </div>
     </div>
 
@@ -188,11 +211,13 @@
         <div class="hand-box">
             <div class="hand-title">Main gauche</div>
             <div class="hand-value" id="gaucheText">-</div>
+            <div class="hand-next" id="gaucheNext">-</div>
         </div>
 
         <div class="hand-box">
             <div class="hand-title">Main droite</div>
             <div class="hand-value" id="droiteText">-</div>
+            <div class="hand-next" id="droiteNext">-</div>
         </div>
     </div>
 
@@ -212,14 +237,15 @@
         let currentIndex = 0;
         let intervalId = null;
         
-        // Variables pour la gestion du temps
-        let intervalTime = 2; // secondes
+        let intervalTime = 2;
         let lastUpdateTime = 0;
-        const tickRate = 50; // Met à jour l'interface toutes les 50ms pour un décompte fluide
+        const tickRate = 50;
 
-        // Références aux éléments HTML
         const gaucheText = document.getElementById('gaucheText');
         const droiteText = document.getElementById('droiteText');
+        const gaucheNext = document.getElementById('gaucheNext');
+        const droiteNext = document.getElementById('droiteNext');
+        
         const stepCounter = document.getElementById('stepCounter');
         const totalCounter = document.getElementById('totalCounter');
         const secondsInput = document.getElementById('secondsInput');
@@ -229,6 +255,9 @@
         const sequenceInput = document.getElementById('sequenceInput');
         const countdownVal = document.getElementById('countdownVal');
         const progressBar = document.getElementById('progressBar');
+        
+        // Référence pour l'import de fichier
+        const fileInput = document.getElementById('fileInput');
 
         function parseSequenceInput(text) {
             const lines = text.trim().split('\n');
@@ -248,42 +277,51 @@
 
         function updateDisplay() {
             if (sequence.length === 0) return;
+            
             const step = sequence[currentIndex];
             gaucheText.textContent = step.gauche;
             droiteText.textContent = step.droite;
             stepCounter.textContent = (currentIndex + 1);
             
-            currentIndex++;
-            if (currentIndex >= sequence.length) {
-                currentIndex = 0;
+            let nextIndex = (currentIndex + 1) % sequence.length;
+            const nextStep = sequence[nextIndex];
+            
+            gaucheNext.textContent = nextStep.gauche;
+            droiteNext.textContent = nextStep.droite;
+            
+            if (nextStep.gauche !== step.gauche) {
+                gaucheNext.classList.add('changed');
+            } else {
+                gaucheNext.classList.remove('changed');
             }
+
+            if (nextStep.droite !== step.droite) {
+                droiteNext.classList.add('changed');
+            } else {
+                droiteNext.classList.remove('changed');
+            }
+            
+            currentIndex = nextIndex;
         }
 
-        // Boucle principale qui gère le décompte et le changement d'étape
         function tick() {
             const now = Date.now();
-            const elapsed = (now - lastUpdateTime) / 1000; // Temps écoulé en secondes
+            const elapsed = (now - lastUpdateTime) / 1000;
             
-            // Récupérer le temps demandé par l'utilisateur en direct
             let currentInputTime = parseFloat(secondsInput.value);
             if (!isNaN(currentInputTime) && currentInputTime > 0) {
                 intervalTime = currentInputTime;
             }
 
             const remaining = Math.max(0, intervalTime - elapsed);
-            
-            // Mise à jour du texte (arrondi au supérieur pour afficher des secondes entières) 
-            // Ex: 2.9s restantes afficheront "3", 2.1s afficheront "3", puis "2", "1"
             countdownVal.textContent = Math.ceil(remaining);
             
-            // Mise à jour de la barre de progression (fluide)
             const progressPercent = (elapsed / intervalTime) * 100;
             progressBar.style.width = Math.min(100, progressPercent) + '%';
 
-            // Si le temps est écoulé, on passe à la ligne suivante
             if (elapsed >= intervalTime) {
                 updateDisplay();
-                lastUpdateTime = Date.now(); // Réinitialise le chronomètre pour la prochaine ligne
+                lastUpdateTime = Date.now();
             }
         }
 
@@ -326,7 +364,6 @@
 
             intervalTime = seconds;
             
-            // Affiche la première étape immédiatement et lance le chrono
             updateDisplay();
             lastUpdateTime = Date.now();
             
@@ -344,7 +381,6 @@
 
         function continueAnimation() {
             if (!intervalId && sequence.length > 0) {
-                // On reprend le chrono à partir de maintenant
                 lastUpdateTime = Date.now();
                 intervalId = setInterval(tick, tickRate);
                 setButtonStates('playing');
@@ -354,6 +390,21 @@
         startBtn.addEventListener('click', startAnimation);
         pauseBtn.addEventListener('click', pauseAnimation);
         continueBtn.addEventListener('click', continueAnimation);
+
+        // Événement pour lire le fichier importé
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    // Remplir la zone de texte avec le contenu du fichier
+                    sequenceInput.value = e.target.result;
+                    // Optionnel : on déclenche le démarrage automatiquement
+                    // startAnimation(); 
+                };
+                reader.readAsText(file);
+            }
+        });
 
         // Raccourci clavier Espace
         document.addEventListener('keydown', (e) => {
