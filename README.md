@@ -1,4 +1,7 @@
 # Website
 
+**Landing page:**    
+https://louettechristine.github.io/Website  
 
-https://louettechristine.github.io/Website/jsj.html
+**JSJ:**   
+https://louettechristine.github.io/Website/jsj.html  
