@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mains Gauche et Droite</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Zone de contrôle en haut */
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        input[type="number"] {
+            width: 70px;
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 8px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #004494;
+        }
+
+        button:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+        }
+
+        /* Zone d'affichage principale */
+        .display-area {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 800px;
+            flex-grow: 1;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        /* Conteneurs des mains */
+        .hand-box {
+            width: 45%;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 40px 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hand-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #666;
+        }
+
+        .hand-value {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #0056b3;
+        }
+
+        /* Compteur en bas */
+        .counter {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #555;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .shortcut-hint {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <textarea id="sequenceInput" rows="7" placeholder="Entrez vos valeurs ici (format: gauche : droite)">10d : 18g
+10d : 18g
+10d : 18g
+10d : 18g
+10d : 18g
+1éd : 15h
+1c : 14o</textarea>
+
+        <div class="input-row">
+            <label for="secondsInput">Intervalle (s) :</label>
+            <input type="number" id="secondsInput" value="2" min="0.1" step="0.1">
+            <button id="startBtn">Démarrer</button>
+            <button id="pauseBtn" disabled>Pause</button>
+            <button id="continueBtn" disabled>Continuer</button>
+        </div>
+    </div>
+
+    <div class="display-area">
+        <div class="hand-box">
+            <div class="hand-title">Main gauche</div>
+            <div class="hand-value" id="gaucheText">-</div>
+        </div>
+
+        <div class="hand-box">
+            <div class="hand-title">Main droite</div>
+            <div class="hand-value" id="droiteText">-</div>
+        </div>
+    </div>
+
+    <div class="counter">
+        Étape : <span id="stepCounter">0</span> / <span id="totalCounter">0</span>
+    </div>
+    
+    <div class="shortcut-hint">Astuce : Appuyez sur la barre <b>Espace</b> pour Pause/Continuer</div>
+
+    <script>
+        let sequence = [];
+        let currentIndex = 0;
+        let intervalId = null;
+
+        // Références aux éléments HTML
+        const gaucheText = document.getElementById('gaucheText');
+        const droiteText = document.getElementById('droiteText');
+        const stepCounter = document.getElementById('stepCounter');
+        const totalCounter = document.getElementById('totalCounter');
+        const secondsInput = document.getElementById('secondsInput');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const continueBtn = document.getElementById('continueBtn');
+        const sequenceInput = document.getElementById('sequenceInput');
+
+        // Fonction pour lire et convertir le texte en tableau d'objets
+        function parseSequenceInput(text) {
+            const lines = text.trim().split('\n');
+            const parsedSeq = [];
+            
+            for (let line of lines) {
+                if (line.trim() === '') continue; 
+                const parts = line.split(':');
+                if (parts.length === 2) {
+                    parsedSeq.push({
+                        gauche: parts[0].trim(),
+                        droite: parts[1].trim()
+                    });
+                }
+            }
+            return parsedSeq;
+        }
+
+        // Fonction pour mettre à jour l'affichage
+        function updateDisplay() {
+            if (sequence.length === 0) return;
+
+            const step = sequence[currentIndex];
+            gaucheText.textContent = step.gauche;
+            droiteText.textContent = step.droite;
+            
+            stepCounter.textContent = (currentIndex + 1);
+
+            currentIndex++;
+
+            if (currentIndex >= sequence.length) {
+                currentIndex = 0;
+            }
+        }
+
+        // Gestion des états des boutons
+        function setButtonStates(state) {
+            if (state === 'playing') {
+                startBtn.disabled = false;
+                pauseBtn.disabled = false;
+                continueBtn.disabled = true;
+            } else if (state === 'paused') {
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+                continueBtn.disabled = false;
+            } else { // stopped
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+                continueBtn.disabled = true;
+            }
+        }
+
+        // Démarrer l'animation
+        function startAnimation() {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+
+            sequence = parseSequenceInput(sequenceInput.value);
+            
+            if (sequence.length === 0) {
+                alert("Veuillez entrer une séquence valide (format: gauche : droite).");
+                return;
+            }
+
+            totalCounter.textContent = sequence.length;
+            currentIndex = 0;
+
+            let seconds = parseFloat(secondsInput.value);
+            if (isNaN(seconds) || seconds <= 0) {
+                alert("Veuillez entrer un nombre de secondes valide (supérieur à 0).");
+                return;
+            }
+
+            updateDisplay();
+            intervalId = setInterval(updateDisplay, seconds * 1000);
+            setButtonStates('playing');
+        }
+
+        // Mettre en pause
+        function pauseAnimation() {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+                setButtonStates('paused');
+            }
+        }
+
+        // Continuer
+        function continueAnimation() {
+            if (!intervalId && sequence.length > 0) {
+                let seconds = parseFloat(secondsInput.value);
+                if (isNaN(seconds) || seconds <= 0) return;
+                
+                intervalId = setInterval(updateDisplay, seconds * 1000);
+                setButtonStates('playing');
+            }
+        }
+
+        // Écouteurs d'événements pour les boutons
+        startBtn.addEventListener('click', startAnimation);
+        pauseBtn.addEventListener('click', pauseAnimation);
+        continueBtn.addEventListener('click', continueAnimation);
+
+        // Écouteur pour la barre d'espace (Toggle Pause/Continue)
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                // Ignorer si l'utilisateur tape dans la zone de texte ou l'input
+                if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
+                    return;
+                }
+                
+                // Empêcher le défilement de la page avec la barre d'espace
+                e.preventDefault();
+
+                // Basculer entre Pause et Continuer
+                if (intervalId) {
+                    pauseAnimation();
+                } else if (sequence.length > 0) {
+                    continueAnimation();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
