@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ma Landing Page</title>
+    <style>
+        /* Style de base */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        header {
+            background-color: #ffffff;
+            padding: 50px 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        h1 { margin: 0; color: #2c3e50; }
+        p.subtitle { color: #7f8c8d; font-size: 1.2rem; }
+
+        /* Grille des cases */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Style d'une case */
+        .card {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            background-color: #f8f9fa;
+        }
+
+        .card h2 { color: #2980b9; margin: 0 0 10px 0; }
+        .card p { font-size: 0.9rem; color: #666; margin: 0; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Bienvenue sur ma Landing Page</h1>
+        <p class="subtitle">Choisissez une case pour continuer</p>
+    </header>
+
+    <!-- Conteneur où les cases vont être générées -->
+    <main class="grid-container" id="cases-container"></main>
+
+    <script>
+        // ==========================================
+        // VARIABLE CONTENANT LES PAGES WEB
+        // Modifie cette variable avec tes propres liens
+        // ==========================================
+        const mesLiens = [
+            { 
+                titre: "Google", 
+                description: "Aller sur le moteur de recherche", 
+                url: "https://www.google.com" 
+            },
+            { 
+                titre: "YouTube", 
+                description: "Regarder des vidéos", 
+                url: "https://www.youtube.com" 
+            },
+            { 
+                titre: "GitHub", 
+                description: "Dépôts de code", 
+                url: "https://www.github.com" 
+            },
+            { 
+                titre: "Wikipedia", 
+                description: "L'encyclopédie libre", 
+                url: "https://www.wikipedia.org" 
+            }
+        ];
+
+        // Sélection du conteneur HTML
+        const container = document.getElementById('cases-container');
+
+        // Génération automatique des cases à partir de la variable
+        mesLiens.forEach(lien => {
+            // Création de l'élément case (card)
+            const caseEl = document.createElement('div');
+            caseEl.classList.add('card');
+            
+            // Ajout du contenu (Titre et Description)
+            caseEl.innerHTML = `
+                <h2>${lien.titre}</h2>
+                <p>${lien.description}</p>
+            `;
+
+            // Ajout de l'événement de clic pour la redirection
+            caseEl.addEventListener('click', () => {
+                window.location.href = lien.url; // Redirection vers l'URL
+            });
+
+            // Ajout de la case dans le conteneur
+            container.appendChild(caseEl);
+        });
+    </script>
+
+</body>
+</html>
