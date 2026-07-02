@@ -49,11 +49,12 @@
         }
 
         input[type="number"] {
-            width: 70px;
+            width: 55px;
             padding: 8px;
             font-size: 16px;
             border: 1px solid #ccc;
             border-radius: 5px;
+            text-align: center;
         }
 
         button, label.import-btn {
@@ -193,13 +194,16 @@
 1c : 14o</textarea>
 
         <div class="input-row">
-            <label for="secondsInput">Intervalle (s) :</label>
-            <input type="number" id="secondsInput" value="2" min="0.1" step="0.1">
+            <label>Intervalle :</label>
+            <!-- Saisie séparée Minutes et Secondes -->
+            <input type="number" id="minutesInput" value="1" min="0"> min
+            <input type="number" id="secondsInput" value="0" min="0" max="59"> s
+            
             <button id="startBtn">Démarrer</button>
             <button id="pauseBtn" disabled>Pause</button>
             <button id="continueBtn" disabled>Continuer</button>
-            <!-- Nouveau bouton Précédent -->
             <button id="prevBtn" disabled>Précédent</button>
+            <button id="nextBtn" disabled>Suivant</button>
             <label for="fileInput" class="import-btn">Importer fichier</label>
             <input type="file" id="fileInput" accept=".txt">
         </div>
@@ -220,7 +224,8 @@
     </div>
 
     <div class="bottom-info">
-        <div class="countdown-text">Prochain changement dans : <span id="countdownVal">0</span> s</div>
+        <!-- Format de décompte mis à jour -->
+        <div class="countdown-text">Prochain changement dans : <span id="countdownVal">1:00</span></div>
         <div class="progress-track">
             <div class="progress-fill" id="progressBar"></div>
         </div>
@@ -235,7 +240,7 @@
         let currentIndex = 0;
         let intervalId = null;
         
-        let intervalTime = 2;
+        let intervalTime = 60; // Initialisé à 60 secondes (1 minute)
         let lastUpdateTime = 0;
         const tickRate = 50;
 
@@ -246,15 +251,31 @@
         
         const stepCounter = document.getElementById('stepCounter');
         const totalCounter = document.getElementById('totalCounter');
+        const minutesInput = document.getElementById('minutesInput');
         const secondsInput = document.getElementById('secondsInput');
         const startBtn = document.getElementById('startBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const continueBtn = document.getElementById('continueBtn');
-        const prevBtn = document.getElementById('prevBtn'); // Référence du bouton précédent
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
         const sequenceInput = document.getElementById('sequenceInput');
         const countdownVal = document.getElementById('countdownVal');
         const progressBar = document.getElementById('progressBar');
         const fileInput = document.getElementById('fileInput');
+
+        // Fonction utilitaire pour calculer le temps total en secondes
+        function getIntervalSeconds() {
+            let mins = parseInt(minutesInput.value) || 0;
+            let secs = parseInt(secondsInput.value) || 0;
+            return mins * 60 + secs;
+        }
+
+        // Fonction utilitaire pour formater les secondes en mm:ss
+        function formatTime(totalSeconds) {
+            const m = Math.floor(totalSeconds / 60);
+            const s = totalSeconds % 60;
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
 
         function parseSequenceInput(text) {
             const lines = text.trim().split('\n');
@@ -272,7 +293,6 @@
             return parsedSeq;
         }
 
-        // Affiche uniquement l'étape actuelle et la prochaine en se basant sur currentIndex
         function updateDisplay() {
             if (sequence.length === 0) return;
             
@@ -304,19 +324,21 @@
             const now = Date.now();
             const elapsed = (now - lastUpdateTime) / 1000;
             
-            let currentInputTime = parseFloat(secondsInput.value);
+            // Récupère le temps en direct
+            let currentInputTime = getIntervalSeconds();
             if (!isNaN(currentInputTime) && currentInputTime > 0) {
                 intervalTime = currentInputTime;
             }
 
             const remaining = Math.max(0, intervalTime - elapsed);
-            countdownVal.textContent = Math.ceil(remaining);
+            
+            // Utilisation du format mm:ss pour l'affichage
+            countdownVal.textContent = formatTime(Math.ceil(remaining));
             
             const progressPercent = (elapsed / intervalTime) * 100;
             progressBar.style.width = Math.min(100, progressPercent) + '%';
 
             if (elapsed >= intervalTime) {
-                // Avance l'index puis met à jour l'affichage
                 currentIndex = (currentIndex + 1) % sequence.length;
                 updateDisplay();
                 lastUpdateTime = Date.now();
@@ -329,16 +351,19 @@
                 pauseBtn.disabled = false;
                 continueBtn.disabled = true;
                 prevBtn.disabled = false;
+                nextBtn.disabled = false;
             } else if (state === 'paused') {
                 startBtn.disabled = false;
                 pauseBtn.disabled = true;
                 continueBtn.disabled = false;
                 prevBtn.disabled = false;
+                nextBtn.disabled = false;
             } else {
                 startBtn.disabled = false;
                 pauseBtn.disabled = true;
                 continueBtn.disabled = true;
                 prevBtn.disabled = true;
+                nextBtn.disabled = true;
             }
         }
 
@@ -357,14 +382,13 @@
             totalCounter.textContent = sequence.length;
             currentIndex = 0;
 
-            let seconds = parseFloat(secondsInput.value);
-            if (isNaN(seconds) || seconds <= 0) {
-                alert("Veuillez entrer un nombre de secondes valide (supérieur à 0).");
+            // Calcul du temps total
+            intervalTime = getIntervalSeconds();
+            if (isNaN(intervalTime) || intervalTime <= 0) {
+                alert("Veuillez entrer un temps valide (supérieur à 0).");
                 return;
             }
 
-            intervalTime = seconds;
-            
             updateDisplay();
             lastUpdateTime = Date.now();
             
@@ -388,22 +412,25 @@
             }
         }
 
-        // Nouvelle fonction pour reculer d'une étape
         function stepBack() {
             if (sequence.length === 0) return;
-            
-            // Recule l'index. Si on est à 0, on va au dernier élément de la séquence.
             currentIndex = (currentIndex - 1 + sequence.length) % sequence.length;
-            
             updateDisplay();
-            // On réinitialise le chronomètre pour l'étape sur laquelle on vient de revenir
+            lastUpdateTime = Date.now();
+        }
+
+        function stepForward() {
+            if (sequence.length === 0) return;
+            currentIndex = (currentIndex + 1) % sequence.length;
+            updateDisplay();
             lastUpdateTime = Date.now();
         }
 
         startBtn.addEventListener('click', startAnimation);
         pauseBtn.addEventListener('click', pauseAnimation);
         continueBtn.addEventListener('click', continueAnimation);
-        prevBtn.addEventListener('click', stepBack); // Écouteur pour le bouton précédent
+        prevBtn.addEventListener('click', stepBack);
+        nextBtn.addEventListener('click', stepForward);
 
         fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
