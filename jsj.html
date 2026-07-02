@@ -185,13 +185,10 @@
 <body>
 
     <div class="controls">
-        <textarea id="sequenceInput" rows="7" placeholder="Entrez vos valeurs ici (format: gauche : droite)">10d : 18g
-10d : 18g
-10d : 18g
-10d : 18g
-10d : 18g
-1éd : 15h
-1c : 14o</textarea>
+        <!-- Mise à jour de la valeur par défaut ici -->
+        <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">
+
+</textarea>
 
         <div class="input-row">
             <label>Intervalle :</label>
@@ -242,9 +239,8 @@
         let lastUpdateTime = 0;
         const tickRate = 50;
         
-        // Variables pour le son
         let audioContext = null;
-        let clickWarningPlayed = false; // Empêche de jouer le son en boucle pendant les 2 secondes
+        let clickWarningPlayed = false;
 
         const gaucheText = document.getElementById('gaucheText');
         const droiteText = document.getElementById('droiteText');
@@ -265,7 +261,6 @@
         const progressBar = document.getElementById('progressBar');
         const fileInput = document.getElementById('fileInput');
 
-        // Initialisation de l'API Web Audio (nécessite une interaction utilisateur au préalable)
         function initAudio() {
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -275,7 +270,6 @@
             }
         }
 
-        // Fonction pour générer un clic
         function playClickSound(time = 0) {
             if (!audioContext) return;
             
@@ -285,7 +279,6 @@
             osc.connect(gain);
             gain.connect(audioContext.destination);
             
-            // Un son aigu et court qui ressemble à un "clic"
             osc.frequency.value = 1500; 
             gain.gain.setValueAtTime(0.3, audioContext.currentTime + time);
             gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + time + 0.05);
@@ -294,11 +287,10 @@
             osc.stop(audioContext.currentTime + time + 0.05);
         }
 
-        // Fonction pour générer le "clic-clic" (2 clics rapprochés)
         function playClickClick() {
             if (!audioContext) return;
-            playClickSound(0);      // Premier clic immédiat
-            playClickSound(0.12);   // Deuxième clic 120ms plus tard
+            playClickSound(0);      
+            playClickSound(0.12);   
         }
 
         function getIntervalSeconds() {
@@ -355,7 +347,6 @@
                 droiteNext.classList.remove('changed');
             }
 
-            // On réinitialise l'alarme pour la nouvelle étape
             clickWarningPlayed = false;
         }
 
@@ -375,11 +366,9 @@
             const progressPercent = (elapsed / intervalTime) * 100;
             progressBar.style.width = Math.min(100, progressPercent) + '%';
 
-            // --- GESTION DU CLIC-CLIC ---
-            // Si on est à 2 secondes ou moins du changement, et qu'on n'a pas encore joué le son
             if (remaining <= 2.0 && remaining > 0 && !clickWarningPlayed) {
                 playClickClick();
-                clickWarningPlayed = true; // On marque qu'on l'a joué pour ne pas le répéter
+                clickWarningPlayed = true;
             }
 
             if (elapsed >= intervalTime) {
@@ -412,7 +401,6 @@
         }
 
         function startAnimation() {
-            // Débloque l'audio au moment du clic (exigé par les navigateurs)
             initAudio();
 
             if (intervalId) {
@@ -452,7 +440,7 @@
 
         function continueAnimation() {
             if (!intervalId && sequence.length > 0) {
-                initAudio(); // S'assurer que l'audio est actif même après une pause
+                initAudio();
                 lastUpdateTime = Date.now();
                 intervalId = setInterval(tick, tickRate);
                 setButtonStates('playing');
