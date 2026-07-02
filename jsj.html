@@ -185,8 +185,8 @@
 <body>
 
     <div class="controls">
-        <!-- Mise à jour de la valeur par défaut ici -->
-        <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">Entrez vos valeurs ici (format: gauche : droite</textarea>
+        <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">01 d : 19 g
+        </textarea>
 
         <div class="input-row">
             <label>Intervalle :</label>
@@ -200,6 +200,10 @@
             <button id="nextBtn" disabled>Suivant</button>
             <label for="fileInput" class="import-btn">Importer fichier</label>
             <input type="file" id="fileInput" accept=".txt">
+            
+            <!-- Boutons renommés et ajoutés -->
+            <button id="raccourcisBtn">Raccourcis</button>
+            <button id="localisationBtn">Localisation</button>
         </div>
     </div>
 
@@ -258,6 +262,10 @@
         const countdownVal = document.getElementById('countdownVal');
         const progressBar = document.getElementById('progressBar');
         const fileInput = document.getElementById('fileInput');
+        
+        // Références des nouveaux boutons
+        const raccourcisBtn = document.getElementById('raccourcisBtn');
+        const localisationBtn = document.getElementById('localisationBtn');
 
         function initAudio() {
             if (!audioContext) {
@@ -474,6 +482,16 @@
                 };
                 reader.readAsText(file);
             }
+        });
+
+        // Événement pour le bouton Raccourcis (ouvre xxx.jpg)
+        raccourcisBtn.addEventListener('click', () => {
+            window.open('xxx.jpg', '_blank');
+        });
+
+        // Événement pour le bouton Localisation (ouvre localisation.jpg)
+        localisationBtn.addEventListener('click', () => {
+            window.open('localisation.jpg', '_blank');
         });
 
         document.addEventListener('keydown', (e) => {
