@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #cbcbcb;
+            background-color: #f4f4f9;
             color: #333;
             margin: 0;
             padding: 20px;
@@ -16,28 +16,6 @@
             align-items: center;
             min-height: 100vh;
         }
-
-        /* --- Styles pour le mode Plein Écran --- */
-        body.fullscreen-active {
-            background-color: #1a1a1a;
-            justify-content: center;
-            padding: 0;
-        }
-        body.fullscreen-active .controls,
-        body.fullscreen-active .bottom-info {
-            display: none;
-        }
-        body.fullscreen-active .display-area {
-            max-width: 90vw;
-            margin: 0;
-        }
-        body.fullscreen-active .hand-box {
-            background: #2a2a2a;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-        }
-        body.fullscreen-active .hand-title { color: #aaa; }
-        body.fullscreen-active .hand-value { font-size: 10rem; }
-        body.fullscreen-active .hand-next { font-size: 4rem; }
 
         .controls {
             margin-bottom: 20px;
@@ -49,7 +27,7 @@
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 800px;
+            max-width: 500px;
             box-sizing: border-box;
         }
 
@@ -102,19 +80,6 @@
 
         #fileInput {
             display: none;
-        }
-
-        .loop-container {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-        input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
         }
 
         .display-area {
@@ -198,20 +163,6 @@
             border-radius: 5px;
         }
 
-        /* --- Nouveau style discret pour les doigts --- */
-        .finger-info {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 8px 20px;
-            font-size: 0.8rem;
-            color: #888;
-            margin-top: 5px;
-        }
-        .finger-info span b {
-            color: #666;
-        }
-
         .counter {
             font-size: 1.2rem;
             font-weight: bold;
@@ -229,35 +180,71 @@
             text-align: center;
         }
 
+        /* --- RESPONSIVE POUR GSM / PETITS ÉCRANS --- */
+        @media (max-width: 600px) {
+            .controls {
+                padding: 15px;
+                gap: 10px;
+            }
+            
+            .hand-box {
+                padding: 20px 10px; /* Réduit l'espace intérieur */
+            }
+
+            .hand-title {
+                font-size: 1.1rem; /* Titre plus petit */
+                margin-bottom: 10px;
+            }
+
+            .hand-value {
+                font-size: 2.5rem; /* Valeur principale plus petite (de 4rem à 2.5rem) */
+            }
+
+            .hand-next {
+                font-size: 1.5rem; /* Prochaine valeur plus petite (de 2rem à 1.5rem) */
+                margin-top: 10px;
+                min-height: 1.8rem;
+            }
+
+            .countdown-text, .counter {
+                font-size: 1rem;
+            }
+
+            /* Réduction de la taille des boutons et inputs sur mobile */
+            button, label.import-btn {
+                padding: 6px 10px;
+                font-size: 14px;
+            }
+
+            input[type="number"] {
+                width: 45px;
+                padding: 6px;
+                font-size: 14px;
+            }
+        }
+
     </style>
 </head>
 <body>
 
     <div class="controls">
         <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">01 d : 19 g
-        </textarea>
+01 d : 19 g
+01 d : 19 g</textarea>
 
         <div class="input-row">
             <label>Intervalle :</label>
             <input type="number" id="minutesInput" value="1" min="0"> min
             <input type="number" id="secondsInput" value="0" min="0" max="59"> s
             
-            <div class="loop-container">
-                <input type="checkbox" id="loopCheckbox" checked>
-                <label for="loopCheckbox">Boucler</label>
-            </div>
-
             <button id="startBtn">Démarrer</button>
             <button id="pauseBtn" disabled>Pause</button>
             <button id="continueBtn" disabled>Continuer</button>
             <button id="prevBtn" disabled>Précédent</button>
             <button id="nextBtn" disabled>Suivant</button>
-            
-            <label for="fileInput" class="import-btn">Importer</label>
+            <label for="fileInput" class="import-btn">Importer fichier</label>
             <input type="file" id="fileInput" accept=".txt">
-            <button id="exportBtn">Exporter</button>
             
-            <button id="fullscreenBtn">Plein Écran</button>
             <button id="raccourcisBtn">Raccourcis</button>
             <button id="localisationBtn">Localisation</button>
         </div>
@@ -282,20 +269,10 @@
         <div class="progress-track">
             <div class="progress-fill" id="progressBar"></div>
         </div>
-        
-        <!-- Nouvelles informations discrètes -->
-        <div class="finger-info">
-            <span><b>Pouce :</b> 1 16 9 19 21</span>
-            <span><b>Index :</b> 5 8 10 11 22</span>
-            <span><b>Majeur :</b> 6 25 3 12 13</span>
-            <span><b>Annulaire :</b> 7 2 17 4 14</span>
-            <span><b>Auriculaire :</b> 24 23 18 20 15</span>
-        </div>
-
         <div class="counter">
             Étape : <span id="stepCounter">0</span> / <span id="totalCounter">0</span>
         </div>
-        <div class="shortcut-hint">Astuce : <b>Espace</b> = Pause/Continuer | <b>Flèches ←/→</b> = Précédent/Suivant | <b>Échap</b> = Quitter Plein écran</div>
+        <div class="shortcut-hint">Astuce : Appuyez sur la barre <b>Espace</b> pour Pause/Continuer</div>
     </div>
 
     <script>
@@ -310,7 +287,6 @@
         let audioContext = null;
         let clickWarningPlayed = false;
 
-        // Éléments DOM
         const gaucheText = document.getElementById('gaucheText');
         const droiteText = document.getElementById('droiteText');
         const gaucheNext = document.getElementById('gaucheNext');
@@ -320,8 +296,6 @@
         const totalCounter = document.getElementById('totalCounter');
         const minutesInput = document.getElementById('minutesInput');
         const secondsInput = document.getElementById('secondsInput');
-        const loopCheckbox = document.getElementById('loopCheckbox');
-        
         const startBtn = document.getElementById('startBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const continueBtn = document.getElementById('continueBtn');
@@ -331,85 +305,10 @@
         const countdownVal = document.getElementById('countdownVal');
         const progressBar = document.getElementById('progressBar');
         const fileInput = document.getElementById('fileInput');
-        const exportBtn = document.getElementById('exportBtn');
-        const fullscreenBtn = document.getElementById('fullscreenBtn');
         
         const raccourcisBtn = document.getElementById('raccourcisBtn');
         const localisationBtn = document.getElementById('localisationBtn');
 
-        // ==========================================
-        // 1. SCRIPT DE SAUVEGARDE (LocalStorage)
-        // ==========================================
-        function saveSettings() {
-            const settings = {
-                sequence: sequenceInput.value,
-                minutes: minutesInput.value,
-                seconds: secondsInput.value,
-                loop: loopCheckbox.checked
-            };
-            localStorage.setItem('mainsGD_settings', JSON.stringify(settings));
-        }
-
-        function loadSettings() {
-            const saved = localStorage.getItem('mainsGD_settings');
-            if (saved) {
-                const settings = JSON.parse(saved);
-                sequenceInput.value = settings.sequence || "01 d : 19 g\n";
-                minutesInput.value = settings.minutes !== undefined ? settings.minutes : 1;
-                secondsInput.value = settings.seconds !== undefined ? settings.seconds : 0;
-                loopCheckbox.checked = settings.loop !== undefined ? settings.loop : true;
-            }
-        }
-
-        sequenceInput.addEventListener('input', saveSettings);
-        minutesInput.addEventListener('input', saveSettings);
-        secondsInput.addEventListener('input', saveSettings);
-        loopCheckbox.addEventListener('change', saveSettings);
-
-        loadSettings();
-
-        // ==========================================
-        // 2. EXPORT DE FICHIER
-        // ==========================================
-        exportBtn.addEventListener('click', () => {
-            const textToExport = sequenceInput.value;
-            const blob = new Blob([textToExport], { type: "text/plain;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'sequence_mains.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
-
-        // ==========================================
-        // 3. PLEIN ÉCRAN
-        // ==========================================
-        fullscreenBtn.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
-            }
-        });
-
-        document.addEventListener('fullscreenchange', () => {
-            if (document.fullscreenElement) {
-                document.body.classList.add('fullscreen-active');
-                fullscreenBtn.textContent = "Quitter Plein Écran";
-            } else {
-                document.body.classList.remove('fullscreen-active');
-                fullscreenBtn.textContent = "Plein Écran";
-            }
-        });
-
-        // ==========================================
-        // AUDIO ET LOGIQUE PRINCIPALE
-        // ==========================================
         function initAudio() {
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -421,13 +320,17 @@
 
         function playClickSound(time = 0) {
             if (!audioContext) return;
+            
             const osc = audioContext.createOscillator();
             const gain = audioContext.createGain();
+            
             osc.connect(gain);
             gain.connect(audioContext.destination);
+            
             osc.frequency.value = 1500; 
             gain.gain.setValueAtTime(0.3, audioContext.currentTime + time);
             gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + time + 0.05);
+            
             osc.start(audioContext.currentTime + time);
             osc.stop(audioContext.currentTime + time + 0.05);
         }
@@ -468,29 +371,30 @@
 
         function updateDisplay() {
             if (sequence.length === 0) return;
+            
             const step = sequence[currentIndex];
             gaucheText.textContent = step.gauche;
             droiteText.textContent = step.droite;
             stepCounter.textContent = (currentIndex + 1);
             
             let nextIndex = (currentIndex + 1) % sequence.length;
+            const nextStep = sequence[nextIndex];
             
-            if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
-                gaucheNext.textContent = "FIN";
-                droiteNext.textContent = "FIN";
-                gaucheNext.classList.remove('changed');
-                droiteNext.classList.remove('changed');
+            gaucheNext.textContent = nextStep.gauche;
+            droiteNext.textContent = nextStep.droite;
+            
+            if (nextStep.gauche !== step.gauche) {
+                gaucheNext.classList.add('changed');
             } else {
-                const nextStep = sequence[nextIndex];
-                gaucheNext.textContent = nextStep.gauche;
-                droiteNext.textContent = nextStep.droite;
-                
-                if (nextStep.gauche !== step.gauche) gaucheNext.classList.add('changed');
-                else gaucheNext.classList.remove('changed');
-
-                if (nextStep.droite !== step.droite) droiteNext.classList.add('changed');
-                else droiteNext.classList.remove('changed');
+                gaucheNext.classList.remove('changed');
             }
+
+            if (nextStep.droite !== step.droite) {
+                droiteNext.classList.add('changed');
+            } else {
+                droiteNext.classList.remove('changed');
+            }
+
             clickWarningPlayed = false;
         }
 
@@ -504,7 +408,9 @@
             }
 
             const remaining = Math.max(0, intervalTime - elapsed);
+            
             countdownVal.textContent = formatTime(Math.ceil(remaining));
+            
             const progressPercent = (elapsed / intervalTime) * 100;
             progressBar.style.width = Math.min(100, progressPercent) + '%';
 
@@ -514,13 +420,6 @@
             }
 
             if (elapsed >= intervalTime) {
-                if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
-                    clearInterval(intervalId);
-                    intervalId = null;
-                    setButtonStates('stopped');
-                    return;
-                }
-
                 currentIndex = (currentIndex + 1) % sequence.length;
                 updateDisplay();
                 lastUpdateTime = Date.now();
@@ -540,12 +439,6 @@
                 continueBtn.disabled = false;
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
-            } else if (state === 'stopped') {
-                startBtn.disabled = false;
-                pauseBtn.disabled = true;
-                continueBtn.disabled = true;
-                prevBtn.disabled = false;
-                nextBtn.disabled = true;
             } else {
                 startBtn.disabled = false;
                 pauseBtn.disabled = true;
@@ -557,24 +450,30 @@
 
         function startAnimation() {
             initAudio();
+
             if (intervalId) {
                 clearInterval(intervalId);
                 intervalId = null;
             }
+
             sequence = parseSequenceInput(sequenceInput.value);
             if (sequence.length === 0) {
                 alert("Veuillez entrer une séquence valide (format: gauche : droite).");
                 return;
             }
+
             totalCounter.textContent = sequence.length;
             currentIndex = 0;
+
             intervalTime = getIntervalSeconds();
             if (isNaN(intervalTime) || intervalTime <= 0) {
                 alert("Veuillez entrer un temps valide (supérieur à 0).");
                 return;
             }
+
             updateDisplay();
             lastUpdateTime = Date.now();
+            
             intervalId = setInterval(tick, tickRate);
             setButtonStates('playing');
         }
@@ -622,38 +521,30 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     sequenceInput.value = e.target.result;
-                    saveSettings();
                 };
                 reader.readAsText(file);
             }
         });
 
-        raccourcisBtn.addEventListener('click', () => window.open('JSJ_MAIN.html', '_blank'));
-        localisationBtn.addEventListener('click', () => window.open('jsj_26_verrous.html', '_blank'));
+        raccourcisBtn.addEventListener('click', () => {
+            window.open('xxx.jpg', '_blank');
+        });
 
-        // ==========================================
-        // 4. RACCOURCIS CLAVIER (Espace + Flèches)
-        // ==========================================
+        localisationBtn.addEventListener('click', () => {
+            window.open('localisation.jpg', '_blank');
+        });
+
         document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
-                return;
-            }
-
             if (e.code === 'Space') {
+                if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
+                    return;
+                }
                 e.preventDefault();
                 if (intervalId) {
                     pauseAnimation();
-                } else if (sequence.length > 0 && continueBtn.disabled === false) {
+                } else if (sequence.length > 0) {
                     continueAnimation();
                 }
-            }
-            else if (e.code === 'ArrowLeft') {
-                e.preventDefault();
-                if (!prevBtn.disabled) stepBack();
-            }
-            else if (e.code === 'ArrowRight') {
-                e.preventDefault();
-                if (!nextBtn.disabled) stepForward();
             }
         });
     </script>
