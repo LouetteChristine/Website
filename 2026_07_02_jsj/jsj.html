@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mains Gauche et Droite :)</title>
+    <title>Mains Gauche et Droite</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -38,6 +38,23 @@
         body.fullscreen-active .hand-title { color: #aaa; }
         body.fullscreen-active .hand-value { font-size: 10rem; }
         body.fullscreen-active .hand-next { font-size: 4rem; }
+
+        /* --- Ajustement Plein Écran sur GSM (mobile) --- */
+        @media screen and (max-width: 600px) {
+            body.fullscreen-active .display-area {
+                flex-direction: column; /* Empile les mains sur mobile */
+                gap: 20px;
+            }
+            body.fullscreen-active .hand-box {
+                width: 90%;
+            }
+            body.fullscreen-active .hand-value { 
+                font-size: 5rem; /* Taille réduite pour les valeurs */
+            }
+            body.fullscreen-active .hand-next { 
+                font-size: 2rem; /* Taille réduite pour le texte suivant */
+            }
+        }
 
         .controls {
             margin-bottom: 20px;
@@ -198,7 +215,6 @@
             border-radius: 5px;
         }
 
-        /* --- Nouveau style discret pour les doigts --- */
         .finger-info {
             display: flex;
             flex-wrap: wrap;
@@ -257,9 +273,10 @@
             <input type="file" id="fileInput" accept=".txt">
             <button id="exportBtn">Exporter</button>
             
-            <button id="fullscreenBtn">Plein Écran</button>
+            <!-- Boutons déplacés -->
             <button id="raccourcisBtn">Raccourcis</button>
             <button id="localisationBtn">Localisation</button>
+            <button id="fullscreenBtn">Plein Écran</button>
         </div>
     </div>
 
@@ -283,7 +300,6 @@
             <div class="progress-fill" id="progressBar"></div>
         </div>
         
-        <!-- Nouvelles informations discrètes -->
         <div class="finger-info">
             <span><b>Pouce :</b> 1 16 9 19 21</span>
             <span><b>Index :</b> 5 8 10 11 22</span>
