@@ -36,23 +36,37 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.5);
         }
         body.fullscreen-active .hand-title { color: #aaa; }
-        body.fullscreen-active .hand-value { font-size: 10rem; }
+        body.fullscreen-active .hand-value { font-size: 7rem; }
         body.fullscreen-active .hand-next { font-size: 4rem; }
 
         /* --- Ajustement Plein Écran sur GSM (mobile) --- */
         @media screen and (max-width: 600px) {
             body.fullscreen-active .display-area {
-                flex-direction: column; /* Empile les mains sur mobile */
+                flex-direction: column;
                 gap: 20px;
             }
             body.fullscreen-active .hand-box {
                 width: 90%;
             }
             body.fullscreen-active .hand-value { 
-                font-size: 5rem; /* Taille réduite pour les valeurs */
+                font-size: 5rem; 
             }
             body.fullscreen-active .hand-next { 
-                font-size: 2rem; /* Taille réduite pour le texte suivant */
+                font-size: 2rem; 
+            }
+            .input-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .input-row .spacer {
+                display: none;
+            }
+            .options-group {
+                justify-content: center;
+            }
+            .playback-controls {
+                flex-wrap: wrap;
+                justify-content: center;
             }
         }
 
@@ -70,29 +84,8 @@
             box-sizing: border-box;
         }
 
-        /* --- Conteneur pour la zone de texte et les boutons latéraux --- */
-        .textarea-container {
-            display: flex;
-            gap: 15px;
-            align-items: stretch; /* Pour que les éléments fassent la même hauteur */
-        }
-
-        .side-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-width: 110px; /* Largeur fixe pour aligner les boutons */
-            justify-content: center; /* Centre verticalement si la zone de texte grandit */
-        }
-
-        .side-buttons button, .side-buttons label.import-btn {
-            width: 100%;
-            box-sizing: border-box;
-            white-space: nowrap;
-        }
-
         textarea {
-            flex: 1; /* Prend tout l'espace restant entre les boutons gauche et droite */
+            width: 100%;
             padding: 10px;
             font-size: 16px;
             border: 1px solid #ccc;
@@ -101,19 +94,27 @@
             resize: vertical;
         }
 
-        .input-row {
+        .file-controls {
             display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            justify-content: space-between; /* Aligne les groupes sur les bords */
+            gap: 10px;
         }
 
-        .btn-group {
+        .input-row {
             display: flex;
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
+        }
+
+        .spacer {
+            flex-grow: 1;
+        }
+
+        .options-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
         }
 
         input[type="number"] {
@@ -133,7 +134,7 @@
             color: white;
             border: none;
             border-radius: 5px;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, transform 0.1s;
             display: inline-block;
         }
 
@@ -141,9 +142,14 @@
             background-color: #004494;
         }
 
+        button:active {
+            transform: scale(0.97);
+        }
+
         button:disabled {
             background-color: #aaa;
             cursor: not-allowed;
+            transform: none;
         }
 
         #fileInput {
@@ -155,13 +161,42 @@
             align-items: center;
             gap: 5px;
             font-weight: bold;
-            margin-right: 10px;
         }
+        
         input[type="checkbox"] {
             width: 20px;
             height: 20px;
             cursor: pointer;
         }
+
+        /* --- Zone pour les contrôles de lecture et navigation --- */
+        .playback-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 5px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .playback-controls button {
+            min-width: 90px;
+            font-weight: bold;
+            padding: 10px 15px;
+        }
+
+        #startBtn { background-color: #28a745; }
+        #startBtn:hover:not(:disabled) { background-color: #218838; }
+
+        #pauseBtn { background-color: #ffc107; color: #333; }
+        #pauseBtn:hover:not(:disabled) { background-color: #e0a800; }
+
+        #continueBtn { background-color: #17a2b8; }
+        #continueBtn:hover:not(:disabled) { background-color: #138496; }
+
+        #prevBtn, #nextBtn { background-color: #6c757d; }
+        #prevBtn:hover:not(:disabled), #nextBtn:hover:not(:disabled) { background-color: #5a6268; }
+
 
         .display-area {
             display: flex;
@@ -169,8 +204,9 @@
             width: 100%;
             max-width: 800px;
             flex-grow: 1;
-            align-items: center;
+            align-items: stretch; /* Force les boîtes à avoir la même hauteur */
             margin: 20px 0;
+            gap: 20px; /* Espace entre les deux boîtes */
         }
 
         .hand-box {
@@ -279,50 +315,43 @@
 <body>
 
     <div class="controls">
-        <!-- Conteneur flex : Boutons gauche | Textarea | Boutons droite -->
-        <div class="textarea-container">
-            
-            <!-- BOUTONS À GAUCHE -->
-            <div class="side-buttons">
-                <label for="fileInput" class="import-btn">Importer</label>
-                <input type="file" id="fileInput" accept=".txt">
-                <button id="exportBtn">Exporter</button>
-            </div>
-
-            <!-- ZONE DE TEXTE CENTRALE -->
-            <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">01 d : 19 g
-            </textarea>
-
-            <!-- BOUTONS À DROITE -->
-            <div class="side-buttons">
-                <button id="raccourcisBtn">Raccourcis</button>
-                <button id="localisationBtn">Localisation</button>
-                <button id="fullscreenBtn">Plein Écran</button>
-            </div>
-
+        
+        <div class="file-controls">
+            <label for="fileInput" class="import-btn">Importer</label>
+            <input type="file" id="fileInput" accept=".txt">
+            <button id="exportBtn">Exporter</button>
         </div>
 
+        <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">01 d : 19 g
+        </textarea>
+
         <div class="input-row">
-            <!-- GROUPE 1 : Réglages -->
-            <div class="btn-group">
-                <label>Intervalle :</label>
-                <input type="number" id="minutesInput" value="1" min="0"> min
-                <input type="number" id="secondsInput" value="0" min="0" max="59"> s
-                
-                <div class="loop-container">
-                    <input type="checkbox" id="loopCheckbox" checked>
-                    <label for="loopCheckbox">Boucler</label>
-                </div>
+            <label>Durée :</label>
+            <input type="number" id="minutesInput" value="1" min="0"> min
+            <input type="number" id="secondsInput" value="0" min="0" max="59"> s
+            
+            <div class="loop-container">
+                <input type="checkbox" id="loopCheckbox" checked>
+                <label for="loopCheckbox">Boucle</label>
             </div>
 
-            <!-- GROUPE 2 : Contrôles de lecture -->
-            <div class="btn-group">
-                <button id="startBtn">Démarrer</button>
-                <button id="pauseBtn" disabled>Pause</button>
-                <button id="continueBtn" disabled>Continuer</button>
-                <button id="prevBtn" disabled>Précédent</button>
-                <button id="nextBtn" disabled>Suivant</button>
+            <button id="fullscreenBtn">Plein Écran</button>
+
+            <div class="spacer"></div>
+
+            <div class="options-group">
+                <button id="raccourcisBtn">Raccourcis</button>
+                <button id="localisationBtn">Localisation</button>
             </div>
+        </div>
+
+        <!-- Boutons de contrôle en ligne -->
+        <div class="playback-controls">
+            <button id="startBtn">▶ Démarrer</button>
+            <button id="pauseBtn" disabled>⏸ Pause</button>
+            <button id="continueBtn" disabled>⏵ Continuer</button>
+            <button id="prevBtn" disabled>⏮ Précédent</button>
+            <button id="nextBtn" disabled>Suivant ⏭</button>
         </div>
     </div>
 
@@ -591,13 +620,13 @@
 
         function setButtonStates(state) {
             if (state === 'playing') {
-                startBtn.disabled = false;
+                startBtn.disabled = true;
                 pauseBtn.disabled = false;
                 continueBtn.disabled = true;
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
             } else if (state === 'paused') {
-                startBtn.disabled = false;
+                startBtn.disabled = true;
                 pauseBtn.disabled = true;
                 continueBtn.disabled = false;
                 prevBtn.disabled = false;
@@ -606,7 +635,7 @@
                 startBtn.disabled = false;
                 pauseBtn.disabled = true;
                 continueBtn.disabled = true;
-                prevBtn.disabled = false;
+                prevBtn.disabled = true;
                 nextBtn.disabled = true;
             } else {
                 startBtn.disabled = false;
@@ -663,6 +692,10 @@
             currentIndex = (currentIndex - 1 + sequence.length) % sequence.length;
             updateDisplay();
             lastUpdateTime = Date.now();
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = setInterval(tick, tickRate);
+            }
         }
 
         function stepForward() {
@@ -670,6 +703,10 @@
             currentIndex = (currentIndex + 1) % sequence.length;
             updateDisplay();
             lastUpdateTime = Date.now();
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = setInterval(tick, tickRate);
+            }
         }
 
         startBtn.addEventListener('click', startAnimation);
@@ -707,6 +744,8 @@
                     pauseAnimation();
                 } else if (sequence.length > 0 && continueBtn.disabled === false) {
                     continueAnimation();
+                } else if (sequence.length === 0 || startBtn.disabled === false) {
+                    startAnimation();
                 }
             }
             else if (e.code === 'ArrowLeft') {
