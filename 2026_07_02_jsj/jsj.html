@@ -23,9 +23,8 @@
             justify-content: center;
             padding: 0;
         }
-        body.fullscreen-active .controls,
-        body.fullscreen-active .bottom-info {
-            display: none;
+        body.fullscreen-active .controls {
+            display: none; /* Seuls les contrôles sont masqués */
         }
         body.fullscreen-active .display-area {
             max-width: 90vw;
@@ -38,6 +37,32 @@
         body.fullscreen-active .hand-title { color: #aaa; }
         body.fullscreen-active .hand-value { font-size: 7rem; }
         body.fullscreen-active .hand-next { font-size: 4rem; }
+        
+        /* --- Affichage de la barre de progression en plein écran --- */
+        body.fullscreen-active .bottom-info {
+            max-width: 90vw;
+            margin-top: 20px;
+        }
+        body.fullscreen-active .countdown-text {
+            color: #aaa;
+        }
+        body.fullscreen-active .progress-track {
+            background: #444;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5) inset;
+        }
+        body.fullscreen-active .progress-fill {
+            background: #4a90e2; /* Couleur plus claire pour le fond sombre */
+        }
+        body.fullscreen-active .counter {
+            background: #2a2a2a;
+            color: #aaa;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+        /* Masquer les infos secondaires en plein écran pour garder de la place */
+        body.fullscreen-active .finger-info,
+        body.fullscreen-active .shortcut-hint {
+            display: none;
+        }
 
         /* --- Ajustement Plein Écran sur GSM (mobile) --- */
         @media screen and (max-width: 600px) {
