@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercice 1 - Placement et Itinéraire</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #7f8c8d;
+            --accent: #27ae60;
+            --bg: #f9fafb;
+            --tip-bg: #e8f4f8;
+            --tip-border: #3498db;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--primary);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            text-align: center;
+        }
+
+        main {
+            flex: 1;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem 100px 1rem; /* Espace en bas pour la barre audio */
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1, h2 {
+            color: var(--primary);
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 0.5rem;
+        }
+
+        .tip {
+            background-color: var(--tip-bg);
+            border-left: 5px solid var(--tip-border);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 0 5px 5px 0;
+            font-style: italic;
+        }
+
+        .tip strong {
+            color: var(--tip-border);
+            font-style: normal;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 3rem;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: var(--accent);
+        }
+
+        button:disabled {
+            background-color: var(--secondary);
+            cursor: not-allowed;
+        }
+
+        /* Audio Controls */
+        .audio-controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            z-index: 1000;
+            flex-wrap: wrap; /* Pour que ça s'adapte sur mobile */
+        }
+
+        .voice-select {
+            padding: 0.5rem;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .btn-play { background-color: #3498db; }
+        .btn-pause { background-color: #f39c12; }
+        .btn-stop { background-color: #e74c3c; }
+
+        /* Styles pour le contrôle de vitesse */
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .speed-control input[type="range"] {
+            cursor: pointer;
+            width: 80px;
+        }
+
+        .speed-value {
+            font-weight: bold;
+            min-width: 35px;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>EXERCICE 1</h1>
+    </header>
+
+    <main>
+        <!-- Section 1: Placement -->
+        <div id="section-1" class="section active">
+            <h2>PLACEMENT</h2>
+            <p><strong>1. Vos jambes :</strong> l’une après l’autre, pliez-les de chaque côté du bassin, placez vos talons sous votre sacrum. Surtout, ne cherchez pas à aplatir le bas du dos, laissez vivre cette courbe plus ou moins prononcée, elle a une raison d’être ! Tout est courbe en nous, c’est indispensable à nos mouvements. Les gens nés avec le dos plat souffrent d’un syndrome postural, ne créez pas de défaut là où il n’y en a pas !</p>
+            <p><strong>2. Vos bras :</strong> allongez-les de chaque côté de la tête, paumes vers le plafond (si vous préférez aligner vos mains sur ou sous le niveau des épaules, allez-y, cela n’entravera pas cet exercice).</p>
+        </div>
+
+        <!-- Section 2: Itinéraire 1 -->
+        <div id="section-2" class="section">
+            <h2>ITINÉRAIRE - Étape 1</h2>
+            <p><strong>1. Votre jambe gauche :</strong> pliez-la sur l’autre jambe dans un mouvement continu, tout en gardant ce pied en contact avec le sol aussi longtemps que possible (même si les plantes de pied se superposent légèrement à mi-chemin). Puis, quand vous n’avez plus le choix, glissez la tranche interne de ce pied d’action sur l’autre, à proximité de la malléole interne du pied du dessous.</p>
+            
+            <div class="tip">
+                <strong>LE CONSEIL EN +</strong><br>
+                Rappelez-vous qu’ici, comme entre chaque mouvement de chaque exercice, il faut ABSOLUMENT stopper tout mouvement et se détendre pendant 3 secondes. Profitez de ce moment pour visualiser le relâchement de vos extrémités, vos mains, vos pieds, votre ventre et votre mâchoire.
+            </div>
+            <p><em>Pour un appui stable ne nécessitant pas de contractions adjacentes inutiles, glissez ce pied suffisamment vers la malléole interne du pied de terre.</em></p>
+        </div>
+
+        <!-- Section 3: Itinéraire 2 -->
+        <div id="section-3" class="section">
+            <h2>ITINÉRAIRE - Étape 2</h2>
+            <p><strong>2. Cette jambe d’action (celle du dessus) :</strong> allongez-la dans l’alignement du genou d’en bas. Conservez son pied légèrement au-dessus du sol, en vous accordant au contour de votre bassin mais sans dépasser la hauteur de cette hanche d’action.</p>
+            <p><em>Pied décollé du sol, mais pas plus haut que la hanche d’action.</em></p>
+            
+            <div class="tip">
+                <strong>LE CONSEIL EN +</strong><br>
+                L’objectif de cet exercice est l’étirement de vos fessiers et du carré des lombes, la zone la plus dense en fascias du corps humain. Vous ressentez des tiraillements ? Si c’est insupportable, arrêtez-vous, passez au prochain exercice. Si les tiraillements sont supportables, vous êtes en train de vous faire un bien fou ! Votre dos et vos psoas attendaient cette décompression avec impatience, vous êtes en train de « dédensifier » vos fascias, de détricoter des nœuds nichés depuis des semaines/mois/années, et de faire de l’espace entre vos vertèbres. Conscientisez le poids de vos cuisses, pieds et doigts de pied, et laissez ces poids « flotter ».
+            </div>
+        </div>
+
+        <!-- Section 4: Itinéraire 3 -->
+        <div id="section-4" class="section">
+            <h2>ITINÉRAIRE - Étape 3</h2>
+            <p><strong>3. La jambe longue :</strong> allongez-la dans le prolongement de votre bassin, puis posez ce pied par terre.</p>
+            
+            <div class="tip">
+                <strong>LE CONSEIL EN +</strong><br>
+                C’est le moment de veiller à maintenir une immense lenteur ! En s’allongeant, cette jambe d’action va vous paraître très lourde, et c’est tant mieux : plus vous ralentirez, plus votre décompression vertébrale sera optimale et doublée du gainage musculaire qui la rendra durable ! Sans parler de l’étirement des psoas qui en ont tant besoin chez chacun d’entre nous : ils sont rarement autant étirés car ils sont très profonds, alors ra-len-ti-ssez !<br><br>
+                L’allongement fini, désactivez ventre et fessiers afin de poser votre bassin ; il vous semblera très légèrement oblique, c’est normal puisque vous avez une jambe pliée latéralement qui ajoute du poids autour de cette hanche – ne changez rien. Faites de même autour du visage : videz vos paupières, votre mâchoire et votre langue de toute action.
+            </div>
+        </div>
+
+        <!-- Section 5: Itinéraire 4, 5 et Récapitulatif -->
+        <div id="section-5" class="section">
+            <h2>ITINÉRAIRE - Étapes 4 & 5</h2>
+            <p><strong>4. La jambe longue :</strong> allongez-la sur son côté pour retrouver la position de départ. Comme dans le placement du début d’exercice, vérifiez que vous n’êtes pas en train d’aplatir le bas du dos !</p>
+            
+            <p><strong>5. Après 3 secondes de pause,</strong> répétez cet exercice de l’autre côté, puis faites 3 autres répétitions alternant droite et gauche, soit une série de 4 répétitions au total.</p>
+
+            <h2>RÉCAPITULATIF EN IMAGES - EXERCICE 1</h2>
+            <p><em>Un seul mouvement très lent et continu</em></p>
+            <!-- Espace prévu pour l'image -->
+            <div style="background: #eee; height: 200px; display: flex; align-items: center; justify-content: center; border-radius: 5px; color: #777;">
+                [Espace prévu pour l'image du récapitulatif]
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-buttons">
+            <button id="prev-btn" disabled>← Précédent</button>
+            <button id="next-btn">Suivant →</button>
+        </div>
+    </main>
+
+    <!-- Barre de contrôle audio -->
+    <div class="audio-controls">
+        <div>
+            <label for="voice-select">Voix :</label>
+            <select id="voice-select" class="voice-select">
+                <option value="">Chargement des voix...</option>
+            </select>
+        </div>
+        
+        <!-- Nouveau contrôle de débit -->
+        <div class="speed-control">
+            <label for="speed-slider">Débit :</label>
+            <input type="range" id="speed-slider" min="0.5" max="1.5" step="0.1" value="0.9">
+            <span id="speed-value" class="speed-value">0.9x</span>
+        </div>
+
+        <div>
+            <button id="btn-play" class="btn-play">▶ Lecture</button>
+            <button id="btn-pause" class="btn-pause">⏸ Pause</button>
+            <button id="btn-stop" class="btn-stop">⏹ Stop</button>
+        </div>
+    </div>
+
+    <script>
+        // --- GESTION DE LA NAVIGATION ---
+        const sections = document.querySelectorAll('.section');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        let currentIndex = 0;
+
+        function showSection(index) {
+            sections.forEach(sec => sec.classList.remove('active'));
+            sections[index].classList.add('active');
+            
+            prevBtn.disabled = index === 0;
+            nextBtn.disabled = index === sections.length - 1;
+            
+            // Arrêter la lecture vocale quand on change de page
+            window.speechSynthesis.cancel();
+            updatePlayButton();
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                showSection(currentIndex);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < sections.length - 1) {
+                currentIndex++;
+                showSection(currentIndex);
+            }
+        });
+
+        // --- GESTION DE LA SYNTHÈSE VOCALE ---
+        const voiceSelect = document.getElementById('voice-select');
+        const playBtn = document.getElementById('btn-play');
+        const pauseBtn = document.getElementById('btn-pause');
+        const stopBtn = document.getElementById('btn-stop');
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValueDisplay = document.getElementById('speed-value');
+        
+        let voices = [];
+
+        // Mise à jour de l'affichage du débit
+        speedSlider.addEventListener('input', () => {
+            speedValueDisplay.textContent = speedSlider.value + 'x';
+        });
+
+        // Remplir le menu déroulant avec les voix françaises disponibles
+        function populateVoices() {
+            voices = window.speechSynthesis.getVoices();
+            voiceSelect.innerHTML = ''; 
+
+            const frenchVoices = voices.filter(voice => voice.lang.startsWith('fr'));
+            
+            if (frenchVoices.length === 0) {
+                const option = document.createElement('option');
+                option.textContent = "Aucune voix française détectée";
+                voiceSelect.appendChild(option);
+                return;
+            }
+
+            frenchVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                let genderGuess = "Voix";
+                const nameLower = voice.name.toLowerCase();
+                if (nameLower.includes('female') || nameLower.includes('femme') || nameLower.includes('julie') || nameLower.includes('claire') || nameLower.includes('sophie') || nameLower.includes('céline')) {
+                    genderGuess = "Femme";
+                } else if (nameLower.includes('male') || nameLower.includes('homme') || nameLower.includes('paul') || nameLower.includes('thomas') || nameLower.includes('david') || nameLower.includes('hervé')) {
+                    genderGuess = "Homme";
+                }
+                option.textContent = `${genderGuess} - ${voice.name}`;
+                voiceSelect.appendChild(option);
+            });
+        }
+
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = populateVoices;
+        }
+        populateVoices(); 
+
+        function updatePlayButton() {
+            if (window.speechSynthesis.paused) {
+                playBtn.textContent = '▶ Reprendre';
+            } else if (window.speechSynthesis.speaking) {
+                playBtn.textContent = '▶ En cours...';
+            } else {
+                playBtn.textContent = '▶ Lecture';
+            }
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (window.speechSynthesis.paused) {
+                window.speechSynthesis.resume();
+                updatePlayButton();
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+            const activeSection = sections[currentIndex];
+            const textToRead = activeSection.innerText;
+
+            const utterance = new SpeechSynthesisUtterance(textToRead);
+            utterance.lang = 'fr-FR';
+            
+            // Appliquer la vitesse sélectionnée
+            utterance.rate = parseFloat(speedSlider.value);
+
+            // Sélectionner la voix choisie
+            const selectedVoiceName = voiceSelect.value;
+            const selectedVoice = voices.find(voice => voice.name === selectedVoiceName);
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            }
+
+            utterance.onend = () => {
+                updatePlayButton();
+            };
+
+            window.speechSynthesis.speak(utterance);
+            updatePlayButton();
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+                window.speechSynthesis.pause();
+                updatePlayButton();
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            window.speechSynthesis.cancel();
+            updatePlayButton();
+        });
+
+    </script>
+</body>
+</html>
