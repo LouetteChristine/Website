@@ -744,24 +744,24 @@ Flux de : droite
 
         function setButtonStates(state) {
             if (state === 'playing') {
-                startBtn.disabled = true;
+                startBtn.disabled = false;
                 pauseBtn.disabled = false;
                 continueBtn.disabled = true;
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
-                miniStartBtn.disabled = true;
+                miniStartBtn.disabled = false;
                 miniPlayBtn.disabled = true;
                 miniPauseBtn.disabled = false;
                 miniNextBtn.disabled = false;
             } else if (state === 'paused') {
-                startBtn.disabled = true;
+                startBtn.disabled = false;
                 pauseBtn.disabled = true;
                 continueBtn.disabled = false;
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
-                miniStartBtn.disabled = true;
+                miniStartBtn.disabled = false;
                 miniPlayBtn.disabled = false;
                 miniPauseBtn.disabled = true;
                 miniNextBtn.disabled = false;
