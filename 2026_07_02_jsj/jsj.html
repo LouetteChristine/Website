@@ -756,11 +756,11 @@ Flux de : droite
             if (shouldSpeak && enableTTS && previousStep) {
                 let textsToSpeak = [];
                 if (step.gauche !== previousStep.gauche) {
-                    let valG = step.gauche.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droite');
+                    let valG = step.gauche.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit'); // Modifié ici
                     textsToSpeak.push("Main gauche, " + valG);
                 }
                 if (step.droite !== previousStep.droite) {
-                    let valD = step.droite.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droite');
+                    let valD = step.droite.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit'); // Modifié ici
                     textsToSpeak.push("Main droite, " + valD);
                 }
                 if (textsToSpeak.length > 0) {
@@ -827,11 +827,11 @@ Flux de : droite
                         // Fin de la séquence, on ne dit rien
                     } else {
                         if (nextStep.gauche !== currentStep.gauche) {
-                            let valG = nextStep.gauche.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droite');
+                            let valG = nextStep.gauche.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit'); // Modifié ici
                             textsToSpeak.push("Main gauche, " + valG);
                         }
                         if (nextStep.droite !== currentStep.droite) {
-                            let valD = nextStep.droite.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droite');
+                            let valD = nextStep.droite.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit'); // Modifié ici
                             textsToSpeak.push("Main droite, " + valD);
                         }
                         speakTexts(textsToSpeak);
@@ -849,7 +849,7 @@ Flux de : droite
                 }
 
                 currentIndex = (currentIndex + 1) % sequence.length;
-                updateDisplay(false); // On passe false pour ne pas relire la voix puisqu'elle a déjà parlé
+                updateDisplay(false); 
                 lastUpdateTime = Date.now();
             }
         }
@@ -925,7 +925,7 @@ Flux de : droite
                 return;
             }
             
-            updateDisplay(false); // Ne pas lire au tout début
+            updateDisplay(false); 
             lastUpdateTime = Date.now();
             intervalId = setInterval(tick, tickRate);
             setButtonStates('playing');
@@ -956,9 +956,9 @@ Flux de : droite
         function stepBack() {
             if (sequence.length === 0) return;
             initAudio();
-            if (enableClick) playClickClick(); // Son pour le changement manuel
+            if (enableClick) playClickClick(); 
             currentIndex = (currentIndex - 1 + sequence.length) % sequence.length;
-            updateDisplay(); // Lecture vocale activée si bouton Voix On
+            updateDisplay(); 
             lastUpdateTime = Date.now();
             if (intervalId) {
                 clearInterval(intervalId);
@@ -969,9 +969,9 @@ Flux de : droite
         function stepForward() {
             if (sequence.length === 0) return;
             initAudio();
-            if (enableClick) playClickClick(); // Son pour le changement manuel
+            if (enableClick) playClickClick(); 
             currentIndex = (currentIndex + 1) % sequence.length;
-            updateDisplay(); // Lecture vocale activée si bouton Voix On
+            updateDisplay(); 
             lastUpdateTime = Date.now();
             if (intervalId) {
                 clearInterval(intervalId);
