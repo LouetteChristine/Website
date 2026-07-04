@@ -690,7 +690,6 @@
                 intervalId = null;
             }
             
-            // Recharge systématiquement la séquence et les paramètres depuis la zone de texte
             sequence = parseSequenceInput(sequenceInput.value);
             intervalTime = getIntervalSeconds();
             
@@ -723,7 +722,6 @@
         function continueAnimation() {
             if (!intervalId && sequence.length > 0) {
                 initAudio();
-                // On met à jour l'intervalle au cas où il a été changé pendant la pause
                 intervalTime = getIntervalSeconds(); 
                 if (isNaN(intervalTime) || intervalTime <= 0) {
                     alert("Veuillez entrer un temps valide (supérieur à 0).");
@@ -763,6 +761,9 @@
         prevBtn.addEventListener('click', stepBack);
         nextBtn.addEventListener('click', stepForward);
 
+        // ==========================================
+        // 4. IMPORTATION DE FICHIER AVEC RECHARGEMENT
+        // ==========================================
         fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file) {
@@ -770,6 +771,8 @@
                 reader.onload = (e) => {
                     sequenceInput.value = e.target.result;
                     saveSettings();
+                    // Recharge la page après l'importation pour actualiser l'interface
+                    location.reload(); 
                 };
                 reader.readAsText(file);
             }
@@ -779,7 +782,7 @@
         localisationBtn.addEventListener('click', () => window.open('jsj_26_verrous.html', '_blank'));
 
         // ==========================================
-        // 4. RACCOURCIS CLAVIER (Espace + Flèches)
+        // 5. RACCOURCIS CLAVIER (Espace + Flèches)
         // ==========================================
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
