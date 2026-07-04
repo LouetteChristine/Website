@@ -337,7 +337,7 @@
             color: #666;
         }
 
-        /* --- Nouveau style pour le conteneur Étape + Boutons discrets --- */
+        /* --- Style pour le conteneur Étape + Boutons discrets --- */
         .counter-wrapper {
             display: flex;
             align-items: center;
@@ -369,6 +369,8 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             line-height: 1.2;
+            min-width: 28px;
+            text-align: center;
             transition: background-color 0.2s;
         }
 
@@ -462,14 +464,15 @@
             <span><b>Auriculaire :</b> 24 23 18 20 15</span>
         </div>
 
-        <!-- Nouveau conteneur pour l'étape et les boutons discrets -->
+        <!-- Conteneur pour l'étape et les mini-boutons discrets -->
         <div class="counter-wrapper">
             <div class="counter">
                 Étape : <span id="stepCounter">0</span> / <span id="totalCounter">0</span>
             </div>
             <div class="mini-controls">
                 <button type="button" id="miniPrevBtn" class="mini-btn" disabled><<</button>
-                <button type="button" id="miniStopBtn" class="mini-btn" disabled>_</button>
+                <button type="button" id="miniPlayBtn" class="mini-btn" disabled>▶</button>
+                <button type="button" id="miniPauseBtn" class="mini-btn" disabled>⏸</button>
                 <button type="button" id="miniNextBtn" class="mini-btn" disabled>>></button>
             </div>
         </div>
@@ -516,9 +519,10 @@
         const raccourcisBtn = document.getElementById('raccourcisBtn');
         const localisationBtn = document.getElementById('localisationBtn');
         
-        // Nouveaux petits boutons
+        // Mini boutons
         const miniPrevBtn = document.getElementById('miniPrevBtn');
-        const miniStopBtn = document.getElementById('miniStopBtn');
+        const miniPlayBtn = document.getElementById('miniPlayBtn');
+        const miniPauseBtn = document.getElementById('miniPauseBtn');
         const miniNextBtn = document.getElementById('miniNextBtn');
 
         // ==========================================
@@ -724,7 +728,8 @@
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
-                miniStopBtn.disabled = false;
+                miniPlayBtn.disabled = true;
+                miniPauseBtn.disabled = false;
                 miniNextBtn.disabled = false;
             } else if (state === 'paused') {
                 startBtn.disabled = true;
@@ -733,7 +738,8 @@
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
-                miniStopBtn.disabled = false;
+                miniPlayBtn.disabled = false;
+                miniPauseBtn.disabled = true;
                 miniNextBtn.disabled = false;
             } else if (state === 'stopped') {
                 startBtn.disabled = false;
@@ -742,7 +748,8 @@
                 prevBtn.disabled = true;
                 nextBtn.disabled = true;
                 miniPrevBtn.disabled = true;
-                miniStopBtn.disabled = true;
+                miniPlayBtn.disabled = true;
+                miniPauseBtn.disabled = true;
                 miniNextBtn.disabled = true;
             } else {
                 startBtn.disabled = false;
@@ -751,7 +758,8 @@
                 prevBtn.disabled = true;
                 nextBtn.disabled = true;
                 miniPrevBtn.disabled = true;
-                miniStopBtn.disabled = true;
+                miniPlayBtn.disabled = true;
+                miniPauseBtn.disabled = true;
                 miniNextBtn.disabled = true;
             }
         }
@@ -806,20 +814,6 @@
             }
         }
 
-        function stopAnimation() {
-            if (intervalId) {
-                clearInterval(intervalId);
-                intervalId = null;
-            }
-            currentIndex = 0;
-            if (sequence.length > 0) {
-                updateDisplay();
-            }
-            countdownVal.textContent = formatTime(intervalTime);
-            progressBar.style.width = '0%';
-            setButtonStates('stopped');
-        }
-
         function stepBack() {
             if (sequence.length === 0) return;
             currentIndex = (currentIndex - 1 + sequence.length) % sequence.length;
@@ -842,14 +836,17 @@
             }
         }
 
+        // Écouteurs des boutons principaux
         startBtn.addEventListener('click', startAnimation);
         pauseBtn.addEventListener('click', pauseAnimation);
         continueBtn.addEventListener('click', continueAnimation);
         prevBtn.addEventListener('click', stepBack);
         nextBtn.addEventListener('click', stepForward);
         
+        // Écouteurs des mini boutons
         miniPrevBtn.addEventListener('click', stepBack);
-        miniStopBtn.addEventListener('click', stopAnimation);
+        miniPlayBtn.addEventListener('click', continueAnimation);
+        miniPauseBtn.addEventListener('click', pauseAnimation);
         miniNextBtn.addEventListener('click', stepForward);
 
         fileInput.addEventListener('change', (event) => {
