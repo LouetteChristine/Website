@@ -240,6 +240,12 @@
 
         #prevBtn, #nextBtn { background-color: #6c757d; }
         #prevBtn:hover:not(:disabled), #nextBtn:hover:not(:disabled) { background-color: #5a6268; }
+        
+        /* Style du bouton TTS */
+        #ttsBtn { background-color: #6c757d; }
+        #ttsBtn:hover:not(.tts-active) { background-color: #5a6268; }
+        #ttsBtn.tts-active { background-color: #e83e8c; }
+        #ttsBtn.tts-active:hover { background-color: #d63384; }
 
 
         .display-area {
@@ -432,6 +438,7 @@ Flux de : droite
             </div>
 
             <button type="button" id="fullscreenBtn">Plein Écran</button>
+            <button type="button" id="ttsBtn">🔊 Voix : Off</button>
 
             <div class="spacer"></div>
 
@@ -507,6 +514,10 @@ Flux de : droite
         
         let audioContext = null;
         let clickWarningPlayed = false;
+        
+        // Variables pour la synthèse vocale
+        let enableTTS = false;
+        let previousStep = null;
 
         // Éléments DOM
         const gaucheText = document.getElementById('gaucheText');
@@ -531,6 +542,7 @@ Flux de : droite
         const fileInput = document.getElementById('fileInput');
         const exportBtn = document.getElementById('exportBtn');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const ttsBtn = document.getElementById('ttsBtn');
         
         const raccourcisBtn = document.getElementById('raccourcisBtn');
         const localisationBtn = document.getElementById('localisationBtn');
@@ -543,10 +555,60 @@ Flux de : droite
         const miniNextBtn = document.getElementById('miniNextBtn');
 
         // ==========================================
+        // FONCTIONS DE PARSE ET MAJ COMPTEUR
+        // ==========================================
+        function parseSequenceInput(text) {
+            const lines = text.trim().split('\n');
+            const parsedSeq = [];
+            for (let line of lines) {
+                if (line.trim() === '') continue; 
+                const parts = line.split(':');
+                if (parts.length === 2) {
+                    parsedSeq.push({
+                        gauche: parts[0].trim(),
+                        droite: parts[1].trim()
+                    });
+                }
+            }
+            return parsedSeq;
+        }
+
+        function updateTotalCounter() {
+            const parsedSeq = parseSequenceInput(sequenceInput.value);
+            totalCounter.textContent = parsedSeq.length;
+        }
+
+        // ==========================================
+        // SYNTHÈSE VOCALELE (TTS)
+        // ==========================================
+        ttsBtn.addEventListener('click', () => {
+            enableTTS = !enableTTS;
+            ttsBtn.textContent = enableTTS ? "🔊 Voix : On" : "🔊 Voix : Off";
+            ttsBtn.classList.toggle('tts-active', enableTTS);
+            if (!enableTTS && window.speechSynthesis) {
+                window.speechSynthesis.cancel(); // Couper la voix si on désactive en cours de lecture
+            }
+            saveSettings();
+        });
+
+        function speakTexts(texts) {
+            if (!window.speechSynthesis || !enableTTS) return;
+            window.speechSynthesis.cancel(); // Annuler la lecture en cours pour éviter les retards
+            
+            texts.forEach(t => {
+                // Remplacer "g" et "d" par "gauche" et "droite" pour une lecture plus naturelle
+                const cleanText = t.replace(/\bg\b/, 'gauche').replace(/\bd\b/, 'droite');
+                const utterance = new SpeechSynthesisUtterance(cleanText);
+                utterance.lang = 'fr-FR';
+                utterance.rate = 1.1; // Légèrement plus rapide
+                window.speechSynthesis.speak(utterance);
+            });
+        }
+
+        // ==========================================
         // 1. SCRIPT DE SAUVEGARDE (LocalStorage)
         // ==========================================
         
-        // Séquence par défaut si rien dans le localStorage
         const defaultSequenceText = `Le foie\nFlux de : gauche\n04 g : 22 d\n04 g : 14 d\n04 g : 01 g\n04 g : 05 g\n04 g : 18 g\n04 d : 18 g\nFlux de : droite\n22 g : 04 d\n14 g : 04 d\n01 d : 04 d\n05 d : 04 d\n18 d : 04 d\n18 d : 04 g`;
 
         function saveSettings() {
@@ -554,7 +616,8 @@ Flux de : droite
                 sequence: sequenceInput.value,
                 minutes: minutesInput.value,
                 seconds: secondsInput.value,
-                loop: loopCheckbox.checked
+                loop: loopCheckbox.checked,
+                tts: enableTTS
             };
             localStorage.setItem('mainsGD_settings', JSON.stringify(settings));
         }
@@ -567,18 +630,26 @@ Flux de : droite
                 minutesInput.value = settings.minutes !== undefined ? settings.minutes : 1;
                 secondsInput.value = settings.seconds !== undefined ? settings.seconds : 0;
                 loopCheckbox.checked = settings.loop !== undefined ? settings.loop : true;
+                
+                // Chargement de l'état TTS
+                enableTTS = settings.tts || false;
+                ttsBtn.textContent = enableTTS ? "🔊 Voix : On" : "🔊 Voix : Off";
+                ttsBtn.classList.toggle('tts-active', enableTTS);
             } else {
-                // Chargement par défaut si premier lancement
                 sequenceInput.value = defaultSequenceText;
             }
         }
 
-        sequenceInput.addEventListener('input', saveSettings);
+        sequenceInput.addEventListener('input', () => {
+            saveSettings();
+            updateTotalCounter();
+        });
         minutesInput.addEventListener('input', saveSettings);
         secondsInput.addEventListener('input', saveSettings);
         loopCheckbox.addEventListener('change', saveSettings);
 
         loadSettings();
+        updateTotalCounter();
 
         // ==========================================
         // 2. EXPORT DE FICHIER
@@ -667,25 +738,23 @@ Flux de : droite
             return `${m}:${s.toString().padStart(2, '0')}`;
         }
 
-        function parseSequenceInput(text) {
-            const lines = text.trim().split('\n');
-            const parsedSeq = [];
-            for (let line of lines) {
-                if (line.trim() === '') continue; 
-                const parts = line.split(':');
-                if (parts.length === 2) {
-                    parsedSeq.push({
-                        gauche: parts[0].trim(),
-                        droite: parts[1].trim()
-                    });
-                }
-            }
-            return parsedSeq;
-        }
-
         function updateDisplay() {
             if (sequence.length === 0) return;
             const step = sequence[currentIndex];
+            
+            // --- Logique de lecture vocale ---
+            let textsToSpeak = [];
+            if (previousStep) {
+                if (step.gauche !== previousStep.gauche) textsToSpeak.push(step.gauche);
+                if (step.droite !== previousStep.droite) textsToSpeak.push(step.droite);
+                
+                if (textsToSpeak.length > 0) {
+                    speakTexts(textsToSpeak);
+                }
+            }
+            previousStep = step; // Met à jour pour la prochaine comparaison
+            // ---------------------------------
+
             gaucheText.textContent = step.gauche;
             droiteText.textContent = step.droite;
             stepCounter.textContent = (currentIndex + 1);
@@ -808,6 +877,7 @@ Flux de : droite
             }
             totalCounter.textContent = sequence.length;
             currentIndex = 0;
+            previousStep = null; // Réinitialisé pour ne pas lire la première étape tout de suite
             
             if (isNaN(intervalTime) || intervalTime <= 0) {
                 alert("Veuillez entrer un temps valide (supérieur à 0).");
@@ -885,6 +955,7 @@ Flux de : droite
                 reader.onload = (e) => {
                     sequenceInput.value = e.target.result;
                     saveSettings();
+                    updateTotalCounter();
                     location.reload(); 
                 };
                 reader.readAsText(file);
@@ -924,4 +995,3 @@ Flux de : droite
     </script>
 </body>
 </html>
-
