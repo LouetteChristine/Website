@@ -576,11 +576,10 @@ Flux de : droite
             for (let line of lines) {
                 if (line.trim() === '') continue; 
                 
-                // IGNORE LA LIGNE S'IL N'Y A AUCUN CHIFFRE DÉDUIT
-                if (!/\d/.test(line)) continue;
-
+                // On sépare la ligne en deux parties
                 const parts = line.split(':');
-                if (parts.length === 2) {
+                // On s'assure d'avoir bien deux parties non vides pour pouvoir l'ajouter
+                if (parts.length === 2 && parts[0].trim() !== '' && parts[1].trim() !== '') {
                     parsedSeq.push({
                         gauche: parts[0].trim(),
                         droite: parts[1].trim()
@@ -719,6 +718,12 @@ Flux de : droite
             }
         }
 
+        // Vérifie si une étape ne contient aucun chiffre
+        function isTextOnlyStep(step) {
+            if (!step) return false;
+            return !/\d/.test(step.gauche) && !/\d/.test(step.droite);
+        }
+
         // FONCTION pour calculer exactement ce qui doit être dit
         function getVoiceTexts(oldStep, newStep) {
             let textsToSpeak = [];
@@ -729,12 +734,15 @@ Flux de : droite
 
             if (!leftChanged && !rightChanged) return textsToSpeak;
 
-            let bothChanged = leftChanged && rightChanged;
             let leftHasDigit = /\d/.test(newStep.gauche);
             let rightHasDigit = /\d/.test(newStep.droite);
 
-            // SEULE RÈGLE : Si les deux zones sont rouges ET aucune n'a de chiffre -> on ne dit rien
-            if (bothChanged && !leftHasDigit && !rightHasDigit) {
+            // Si aucune des deux zones n'a de chiffre
+            if (!leftHasDigit && !rightHasDigit) {
+                // On lit simplement le texte assemblé (ex: "Flux de gauche")
+                if (leftChanged || rightChanged) {
+                    textsToSpeak.push(`${newStep.gauche} ${newStep.droite}`);
+                }
                 return textsToSpeak;
             }
 
@@ -763,7 +771,7 @@ Flux de : droite
                 loop: loopCheckbox.checked,
                 click: enableClick,
                 tts: enableTTS,
-                voiceIndex: voiceSelect.value // Sauvegarde de l'index de la voix
+                voiceIndex: voiceSelect.value
             };
             localStorage.setItem('mainsGD_settings', JSON.stringify(settings));
         }
@@ -784,8 +792,6 @@ Flux de : droite
                 enableTTS = settings.tts || false;
                 ttsBtn.textContent = enableTTS ? "🗣 Voix : On" : "🗣 Voix : Off";
                 ttsBtn.classList.toggle('tts-active', enableTTS);
-
-                // La voix est appliquée dans loadVoices() car elle dépend du chargement asynchrone
             } else {
                 sequenceInput.value = defaultSequenceText;
             }
@@ -900,7 +906,12 @@ Flux de : droite
             if (sequence.length === 0) return;
             const step = sequence[currentIndex];
             
-            if (shouldSpeak && enableTTS && previousStep) {
+            if (isTextOnlyStep(step)) {
+                // Si c'est du texte seul, on le lit immédiatement
+                if (enableTTS) {
+                    speakTexts([`${step.gauche} ${step.droite}`]);
+                }
+            } else if (shouldSpeak && enableTTS && previousStep) {
                 let textsToSpeak = getVoiceTexts(previousStep, step);
                 if (textsToSpeak.length > 0) {
                     speakTexts(textsToSpeak);
@@ -937,9 +948,16 @@ Flux de : droite
             const now = Date.now();
             const elapsed = (now - lastUpdateTime) / 1000;
             
-            let currentInputTime = getIntervalSeconds();
-            if (!isNaN(currentInputTime) && currentInputTime > 0) {
-                intervalTime = currentInputTime;
+            const currentStep = sequence[currentIndex];
+            
+            // Déterminer la durée de l'étape actuelle
+            if (isTextOnlyStep(currentStep)) {
+                intervalTime = 4; // 4 secondes pour les étapes textuelles
+            } else {
+                let currentInputTime = getIntervalSeconds();
+                if (!isNaN(currentInputTime) && currentInputTime > 0) {
+                    intervalTime = currentInputTime;
+                }
             }
 
             const remaining = Math.max(0, intervalTime - elapsed);
@@ -947,23 +965,29 @@ Flux de : droite
             const progressPercent = (elapsed / intervalTime) * 100;
             progressBar.style.width = Math.min(100, progressPercent) + '%';
 
-            if (remaining <= 5.0 && remaining > 0 && !clickWarningPlayed) {
+            // Avertir 5s avant la fin, ou la moitié du temps si le temps est court
+            const warningTime = intervalTime > 5 ? 5.0 : Math.max(0.5, intervalTime / 2);
+
+            if (remaining <= warningTime && remaining > 0 && !clickWarningPlayed) {
                 if (enableClick) {
                     playClickClick();
                 }
                 clickWarningPlayed = true;
                 
                 if (enableTTS && sequence.length > 0) {
-                    const currentStep = sequence[currentIndex];
                     const nextIdx = (currentIndex + 1) % sequence.length;
                     const nextStep = sequence[nextIdx];
                     
                     if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
                         // Fin de la séquence, on ne dit rien
                     } else {
-                        let textsToSpeak = getVoiceTexts(currentStep, nextStep);
-                        if (textsToSpeak.length > 0) {
-                            speakTexts(textsToSpeak);
+                        // Si la prochaine étape est textuelle, on ne l'annonce pas en avance 
+                        // pour éviter de la couper, elle sera annoncée à son affichage
+                        if (!isTextOnlyStep(nextStep)) {
+                            let textsToSpeak = getVoiceTexts(currentStep, nextStep);
+                            if (textsToSpeak.length > 0) {
+                                speakTexts(textsToSpeak);
+                            }
                         }
                     }
                 }
@@ -1040,7 +1064,6 @@ Flux de : droite
             }
             
             sequence = parseSequenceInput(sequenceInput.value);
-            intervalTime = getIntervalSeconds();
             
             if (sequence.length === 0) {
                 alert("Veuillez entrer une séquence valide (format: gauche : droite).");
@@ -1049,6 +1072,13 @@ Flux de : droite
             totalCounter.textContent = sequence.length;
             currentIndex = 0;
             previousStep = null; 
+            
+            // Initialiser la durée en fonction de la première étape
+            if (isTextOnlyStep(sequence[currentIndex])) {
+                intervalTime = 4;
+            } else {
+                intervalTime = getIntervalSeconds();
+            }
             
             if (isNaN(intervalTime) || intervalTime <= 0) {
                 alert("Veuillez entrer un temps valide (supérieur à 0).");
@@ -1072,7 +1102,13 @@ Flux de : droite
         function continueAnimation() {
             if (!intervalId && sequence.length > 0) {
                 initAudio();
-                intervalTime = getIntervalSeconds(); 
+                // Initialiser la durée en fonction de l'étape actuelle
+                if (isTextOnlyStep(sequence[currentIndex])) {
+                    intervalTime = 4;
+                } else {
+                    intervalTime = getIntervalSeconds(); 
+                }
+                
                 if (isNaN(intervalTime) || intervalTime <= 0) {
                     alert("Veuillez entrer un temps valide (supérieur à 0).");
                     return;
