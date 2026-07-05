@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="fr">
 <head>  
     <meta charset="UTF-8">
@@ -563,6 +562,10 @@ Flux de : droite
             const parsedSeq = [];
             for (let line of lines) {
                 if (line.trim() === '') continue; 
+                
+                // IGNORE LA LIGNE S'IL N'Y A AUCUN CHIFFRE DÉDUIT
+                if (!/\d/.test(line)) continue;
+
                 const parts = line.split(':');
                 if (parts.length === 2) {
                     parsedSeq.push({
