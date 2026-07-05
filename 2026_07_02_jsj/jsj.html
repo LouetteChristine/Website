@@ -610,16 +610,14 @@ Flux de : droite
             });
         }
 
-        // NOUVELLE FONCTION pour formater le texte (enlever le 0 initial et convertir g/d)
+        // FONCTION pour formater le texte (enlever le 0 initial et convertir g/d)
         function formatSpokenValue(val) {
-            // Remplace "04" par "4", "01" par "1", etc. (uniquement pour les chiffres < 10)
             let cleanedVal = val.replace(/\b0(\d)\b/i, '$1');
-            // Remplace "g" par "gauche" et "d" par "droit"
             cleanedVal = cleanedVal.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit');
             return cleanedVal;
         }
 
-        // NOUVELLE FONCTION pour calculer exactement ce qui doit être dit
+        // FONCTION pour calculer exactement ce qui doit être dit
         function getVoiceTexts(oldStep, newStep) {
             let textsToSpeak = [];
             if (!oldStep || !newStep) return textsToSpeak;
@@ -633,19 +631,16 @@ Flux de : droite
             let leftHasDigit = /\d/.test(newStep.gauche);
             let rightHasDigit = /\d/.test(newStep.droite);
 
-            // Règle 1 : Si les 2 zones changent et qu'aucune ne contient de chiffre, on ne dit rien
+            // SEULE RÈGLE : Si les deux zones sont rouges ET aucune n'a de chiffre -> on ne dit rien
             if (bothChanged && !leftHasDigit && !rightHasDigit) {
                 return textsToSpeak;
             }
 
-            // Règles 2 et 3 : 
-            // Si la gauche a changé, on la prononce si elle a un chiffre, OU si la droite n'a pas changé
-            if (leftChanged && (leftHasDigit || !bothChanged)) {
+            // SINON : on prononce toutes les zones rouges (celles qui ont changé)
+            if (leftChanged) {
                 textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
             }
-
-            // Si la droite a changé, on la prononce si elle a un chiffre, OU si la gauche n'a pas changé
-            if (rightChanged && (rightHasDigit || !bothChanged)) {
+            if (rightChanged) {
                 textsToSpeak.push("Main droite, " + formatSpokenValue(newStep.droite));
             }
 
@@ -679,7 +674,6 @@ Flux de : droite
                 secondsInput.value = settings.seconds !== undefined ? settings.seconds : 0;
                 loopCheckbox.checked = settings.loop !== undefined ? settings.loop : true;
                 
-                // Chargement indépendant du Clic et de la Voix
                 enableClick = settings.click || false;
                 clickBtn.textContent = enableClick ? "🔊 Clic : On" : "🔊 Clic : Off";
                 clickBtn.classList.toggle('click-active', enableClick);
@@ -773,9 +767,16 @@ Flux de : droite
         }
 
         function playClickClick() {
-            if (!audioContext || !enableClick) return; // Ne joue pas si le clic est désactivé
+            if (!audioContext || !enableClick) return;
             playClickSound(0);      
             playClickSound(0.12);   
+        }
+
+        function playEndClicks() {
+            if (!audioContext || !enableClick) return;
+            for (let i = 0; i < 5; i++) {
+                playClickSound(i * 0.5); 
+            }
         }
 
         function getIntervalSeconds() {
@@ -794,7 +795,6 @@ Flux de : droite
             if (sequence.length === 0) return;
             const step = sequence[currentIndex];
             
-            // Logique voix pour les changements manuels (Précédent / Suivant)
             if (shouldSpeak && enableTTS && previousStep) {
                 let textsToSpeak = getVoiceTexts(previousStep, step);
                 if (textsToSpeak.length > 0) {
@@ -842,15 +842,12 @@ Flux de : droite
             const progressPercent = (elapsed / intervalTime) * 100;
             progressBar.style.width = Math.min(100, progressPercent) + '%';
 
-            // Avertissement 5 secondes avant
             if (remaining <= 5.0 && remaining > 0 && !clickWarningPlayed) {
-                // Joue le clic sonore si activé
                 if (enableClick) {
                     playClickClick();
                 }
                 clickWarningPlayed = true;
                 
-                // Annonce vocale anticipée si activée
                 if (enableTTS && sequence.length > 0) {
                     const currentStep = sequence[currentIndex];
                     const nextIdx = (currentIndex + 1) % sequence.length;
@@ -867,12 +864,12 @@ Flux de : droite
                 }
             }
 
-            // Changement d'étape effectif
             if (elapsed >= intervalTime) {
                 if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
                     clearInterval(intervalId);
                     intervalId = null;
                     setButtonStates('stopped');
+                    playEndClicks(); // Lance les 5 clics de fin
                     return;
                 }
 
@@ -1007,14 +1004,12 @@ Flux de : droite
             }
         }
 
-        // Écouteurs des boutons principaux
         startBtn.addEventListener('click', startAnimation);
         pauseBtn.addEventListener('click', pauseAnimation);
         continueBtn.addEventListener('click', continueAnimation);
         prevBtn.addEventListener('click', stepBack);
         nextBtn.addEventListener('click', stepForward);
         
-        // Écouteurs des mini boutons
         miniPrevBtn.addEventListener('click', stepBack);
         miniStartBtn.addEventListener('click', startAnimation);
         miniPlayBtn.addEventListener('click', continueAnimation);
