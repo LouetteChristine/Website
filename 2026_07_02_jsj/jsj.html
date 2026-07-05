@@ -620,9 +620,21 @@ Flux de : droite
         // ==========================================
         function loadVoices() {
             if (!window.speechSynthesis) return;
-            availableVoices = window.speechSynthesis.getVoices();
+            const allVoices = window.speechSynthesis.getVoices();
             voiceSelect.innerHTML = ''; // Vider la liste actuelle
             
+            // Filtrer pour ne garder que les voix françaises
+            availableVoices = allVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith('fr'));
+
+            // Si aucune voix française n'est trouvée
+            if (availableVoices.length === 0) {
+                const option = document.createElement('option');
+                option.textContent = "Aucune voix FR trouvée";
+                option.disabled = true;
+                voiceSelect.appendChild(option);
+                return;
+            }
+
             availableVoices.forEach((voice, index) => {
                 const option = document.createElement('option');
                 option.value = index;
@@ -663,7 +675,7 @@ Flux de : droite
                 } else {
                     utterance.lang = 'fr-FR';
                 }
-                utterance.rate = 1.1; 
+                utterance.rate = 0.8; // Vitesse fixée à 0.8
                 window.speechSynthesis.speak(utterance);
             });
         }
