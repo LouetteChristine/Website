@@ -249,6 +249,16 @@
         #ttsBtn.tts-active { background-color: #e83e8c; }
         #ttsBtn.tts-active:hover { background-color: #d63384; }
 
+        /* Style pour le sélecteur de voix */
+        #voiceSelect {
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+            cursor: pointer;
+        }
+
         .display-area {
             display: flex;
             justify-content: space-between;
@@ -439,6 +449,7 @@ Flux de : droite
             <button type="button" id="fullscreenBtn">Plein Écran</button>
             <button type="button" id="clickBtn">🔊 Clic : Off</button>
             <button type="button" id="ttsBtn">🗣 Voix : Off</button>
+            <select id="voiceSelect" title="Choisir une voix"></select>
 
             <div class="spacer"></div>
 
@@ -517,6 +528,7 @@ Flux de : droite
         let enableClick = false;
         let enableTTS = false;
         let previousStep = null;
+        let availableVoices = [];
 
         // Éléments DOM
         const gaucheText = document.getElementById('gaucheText');
@@ -544,6 +556,7 @@ Flux de : droite
         
         const clickBtn = document.getElementById('clickBtn');
         const ttsBtn = document.getElementById('ttsBtn');
+        const voiceSelect = document.getElementById('voiceSelect');
         
         const raccourcisBtn = document.getElementById('raccourcisBtn');
         const localisationBtn = document.getElementById('localisationBtn');
@@ -602,13 +615,54 @@ Flux de : droite
             saveSettings();
         });
 
+        // ==========================================
+        // GESTION DES VOIX TTS
+        // ==========================================
+        function loadVoices() {
+            if (!window.speechSynthesis) return;
+            availableVoices = window.speechSynthesis.getVoices();
+            voiceSelect.innerHTML = ''; // Vider la liste actuelle
+            
+            availableVoices.forEach((voice, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                if (voice.default) option.selected = true;
+                voiceSelect.appendChild(option);
+            });
+
+            // Restaurer la voix sauvegardée si elle existe
+            const saved = localStorage.getItem('mainsGD_settings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                if (settings.voiceIndex !== undefined && voiceSelect.options[settings.voiceIndex]) {
+                    voiceSelect.value = settings.voiceIndex;
+                }
+            }
+        }
+
+        if (window.speechSynthesis) {
+            loadVoices();
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        voiceSelect.addEventListener('change', saveSettings);
+
         function speakTexts(texts) {
             if (!window.speechSynthesis || !enableTTS) return;
             window.speechSynthesis.cancel(); 
             
+            const selectedVoiceIndex = voiceSelect.value;
+            const selectedVoice = availableVoices[selectedVoiceIndex];
+
             texts.forEach(t => {
                 const utterance = new SpeechSynthesisUtterance(t);
-                utterance.lang = 'fr-FR';
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                    utterance.lang = selectedVoice.lang;
+                } else {
+                    utterance.lang = 'fr-FR';
+                }
                 utterance.rate = 1.1; 
                 window.speechSynthesis.speak(utterance);
             });
@@ -664,7 +718,8 @@ Flux de : droite
                 seconds: secondsInput.value,
                 loop: loopCheckbox.checked,
                 click: enableClick,
-                tts: enableTTS
+                tts: enableTTS,
+                voiceIndex: voiceSelect.value // Sauvegarde de l'index de la voix
             };
             localStorage.setItem('mainsGD_settings', JSON.stringify(settings));
         }
@@ -685,6 +740,8 @@ Flux de : droite
                 enableTTS = settings.tts || false;
                 ttsBtn.textContent = enableTTS ? "🗣 Voix : On" : "🗣 Voix : Off";
                 ttsBtn.classList.toggle('tts-active', enableTTS);
+
+                // La voix est appliquée dans loadVoices() car elle dépend du chargement asynchrone
             } else {
                 sequenceInput.value = defaultSequenceText;
             }
@@ -1041,7 +1098,7 @@ Flux de : droite
         // 4. RACCOURCIS CLAVIER (Espace + Flèches)
         // ==========================================
         document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
+            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
                 return;
             }
 
