@@ -805,12 +805,11 @@ Flux de : droite
             }
         }
 
-        // Si on modifie le texte, on remet à zéro pour pouvoir utiliser "Démarrer"
+        // Si on modifie le texte, on remet à zéro l'animation en cours
         sequenceInput.addEventListener('input', () => {
             saveSettings();
             updateTotalCounter();
             
-            // Remise à zéro si on modifie le texte pendant une pause ou une lecture
             if (intervalId) {
                 clearInterval(intervalId);
                 intervalId = null;
@@ -1036,24 +1035,24 @@ Flux de : droite
 
         function setButtonStates(state) {
             if (state === 'playing') {
-                startBtn.disabled = true; // Désactivé pour éviter de relancer à 0
+                startBtn.disabled = false; // Toujours actif
                 pauseBtn.disabled = false;
                 continueBtn.disabled = true;
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
-                miniStartBtn.disabled = true; // Désactivé
+                miniStartBtn.disabled = false; // Toujours actif
                 miniPlayBtn.disabled = true;
                 miniPauseBtn.disabled = false;
                 miniNextBtn.disabled = false;
             } else if (state === 'paused') {
-                startBtn.disabled = true; // Désactivé pour forcer l'utilisation de "Continuer"
+                startBtn.disabled = false; // Toujours actif
                 pauseBtn.disabled = true;
                 continueBtn.disabled = false;
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
-                miniStartBtn.disabled = true; // Désactivé
+                miniStartBtn.disabled = false; // Toujours actif
                 miniPlayBtn.disabled = false;
                 miniPauseBtn.disabled = true;
                 miniNextBtn.disabled = false;
@@ -1096,7 +1095,7 @@ Flux de : droite
                 return;
             }
             totalCounter.textContent = sequence.length;
-            currentIndex = 0; // On recommence bien à 0 ici
+            currentIndex = 0; // On recommence à zéro
             previousStep = null; 
             
             // Initialiser la durée en fonction de la première étape
@@ -1128,7 +1127,7 @@ Flux de : droite
         function continueAnimation() {
             if (!intervalId && sequence.length > 0) {
                 initAudio();
-                // Initialiser la durée en fonction de l'étape actuelle
+                // Initialiser la durée en fonction de l'étape actuelle (sans réinitialiser currentIndex)
                 if (isTextOnlyStep(sequence[currentIndex])) {
                     intervalTime = 4;
                 } else {
