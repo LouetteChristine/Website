@@ -503,7 +503,7 @@ Flux de : droite
 
         <div class="finger-info">
             <span><b>Pouce :</b> 1 16 9 19 21</span>
-            <span><b>Index :</b> 5 8 10 11 22</span>
+            <span><b>Index :</b> 5 6 10 11 22</span>
             <span><b>Majeur :</b> 6 25 3 12 13</span>
             <span><b>Annulaire :</b> 7 2 17 4 14</span>
             <span><b>Auriculaire :</b> 24 23 18 20 15</span>
@@ -682,9 +682,41 @@ Flux de : droite
 
         // FONCTION pour formater le texte (enlever le 0 initial et convertir g/d)
         function formatSpokenValue(val) {
+            // Enlever le 0 initial (ex: "04" devient "4")
             let cleanedVal = val.replace(/\b0(\d)\b/i, '$1');
+
+            // Extraire le chiffre pour vérifier à quel doigt il correspond
+            const match = cleanedVal.match(/\d+/);
+            let fingerName = "";
+
+            if (match) {
+                const num = parseInt(match[0], 10);
+                
+                // Associer le chiffre au nom du doigt
+                if ([1, 16, 9, 19, 21].includes(num)) {
+                    fingerName = "Pouce";
+                } else if ([5, 6, 10, 11, 22].includes(num)) {
+                    fingerName = "Index";
+                } else if ([6, 25, 3, 12, 13].includes(num)) { 
+                    fingerName = "Majeur";
+                } else if ([7, 2, 17, 4, 14].includes(num)) {
+                    fingerName = "Annulaire";
+                } else if ([24, 23, 18, 20, 15].includes(num)) {
+                    fingerName = "Auriculaire";
+                }
+            }
+
+            // Remplacer g/d par gauche/droit
             cleanedVal = cleanedVal.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit');
-            return cleanedVal;
+
+            // Construire la phrase finale
+            if (fingerName) {
+                // Ajout du raccourci à la fin : "4 droit, raccourci Annulaire"
+                return `${cleanedVal}, raccourci ${fingerName}`;
+            } else {
+                // S'il n'y a pas de chiffre correspondant
+                return cleanedVal;
+            }
         }
 
         // FONCTION pour calculer exactement ce qui doit être dit
