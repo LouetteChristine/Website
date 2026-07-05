@@ -450,6 +450,8 @@ Flux de : droite
             <button type="button" id="clickBtn">🔊 Clic : Off</button>
             <button type="button" id="ttsBtn">🗣 Voix : Off</button>
             <select id="voiceSelect" title="Choisir une voix"></select>
+            <label>Vitesse :</label>
+            <input type="number" id="speedInput" value="0.8" min="0.5" max="2" step="0.1">
 
             <div class="spacer"></div>
 
@@ -557,6 +559,7 @@ Flux de : droite
         const clickBtn = document.getElementById('clickBtn');
         const ttsBtn = document.getElementById('ttsBtn');
         const voiceSelect = document.getElementById('voiceSelect');
+        const speedInput = document.getElementById('speedInput');
         
         const raccourcisBtn = document.getElementById('raccourcisBtn');
         const localisationBtn = document.getElementById('localisationBtn');
@@ -658,6 +661,7 @@ Flux de : droite
         }
 
         voiceSelect.addEventListener('change', saveSettings);
+        speedInput.addEventListener('input', saveSettings);
 
         function speakTexts(texts) {
             if (!window.speechSynthesis || !enableTTS) return;
@@ -665,6 +669,7 @@ Flux de : droite
             
             const selectedVoiceIndex = voiceSelect.value;
             const selectedVoice = availableVoices[selectedVoiceIndex];
+            const currentSpeed = parseFloat(speedInput.value) || 0.8; // Récupérer la vitesse choisie
 
             texts.forEach(t => {
                 const utterance = new SpeechSynthesisUtterance(t);
@@ -674,7 +679,7 @@ Flux de : droite
                 } else {
                     utterance.lang = 'fr-FR';
                 }
-                utterance.rate = 0.8; // Vitesse fixée à 0.8
+                utterance.rate = currentSpeed; // Appliquer la vitesse
                 window.speechSynthesis.speak(utterance);
             });
         }
@@ -771,7 +776,8 @@ Flux de : droite
                 loop: loopCheckbox.checked,
                 click: enableClick,
                 tts: enableTTS,
-                voiceIndex: voiceSelect.value
+                voiceIndex: voiceSelect.value,
+                speed: speedInput.value
             };
             localStorage.setItem('mainsGD_settings', JSON.stringify(settings));
         }
@@ -792,6 +798,8 @@ Flux de : droite
                 enableTTS = settings.tts || false;
                 ttsBtn.textContent = enableTTS ? "🗣 Voix : On" : "🗣 Voix : Off";
                 ttsBtn.classList.toggle('tts-active', enableTTS);
+                
+                speedInput.value = settings.speed !== undefined ? settings.speed : 0.8;
             } else {
                 sequenceInput.value = defaultSequenceText;
             }
