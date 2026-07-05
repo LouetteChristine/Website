@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="fr">
-    
 <head>  
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -806,10 +805,28 @@ Flux de : droite
             }
         }
 
+        // Si on modifie le texte, on remet à zéro pour pouvoir utiliser "Démarrer"
         sequenceInput.addEventListener('input', () => {
             saveSettings();
             updateTotalCounter();
+            
+            // Remise à zéro si on modifie le texte pendant une pause ou une lecture
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+            sequence = [];
+            previousStep = null;
+            setButtonStates('stopped');
+            stepCounter.textContent = '0';
+            countdownVal.textContent = formatTime(getIntervalSeconds() || 0);
+            progressBar.style.width = '0%';
+            gaucheText.textContent = '-';
+            droiteText.textContent = '-';
+            gaucheNext.textContent = '-';
+            droiteNext.textContent = '-';
         });
+        
         minutesInput.addEventListener('input', saveSettings);
         secondsInput.addEventListener('input', saveSettings);
         loopCheckbox.addEventListener('change', saveSettings);
@@ -1019,24 +1036,24 @@ Flux de : droite
 
         function setButtonStates(state) {
             if (state === 'playing') {
-                startBtn.disabled = false;
+                startBtn.disabled = true; // Désactivé pour éviter de relancer à 0
                 pauseBtn.disabled = false;
                 continueBtn.disabled = true;
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
-                miniStartBtn.disabled = false;
+                miniStartBtn.disabled = true; // Désactivé
                 miniPlayBtn.disabled = true;
                 miniPauseBtn.disabled = false;
                 miniNextBtn.disabled = false;
             } else if (state === 'paused') {
-                startBtn.disabled = false;
+                startBtn.disabled = true; // Désactivé pour forcer l'utilisation de "Continuer"
                 pauseBtn.disabled = true;
                 continueBtn.disabled = false;
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
-                miniStartBtn.disabled = false;
+                miniStartBtn.disabled = true; // Désactivé
                 miniPlayBtn.disabled = false;
                 miniPauseBtn.disabled = true;
                 miniNextBtn.disabled = false;
@@ -1079,7 +1096,7 @@ Flux de : droite
                 return;
             }
             totalCounter.textContent = sequence.length;
-            currentIndex = 0;
+            currentIndex = 0; // On recommence bien à 0 ici
             previousStep = null; 
             
             // Initialiser la durée en fonction de la première étape
