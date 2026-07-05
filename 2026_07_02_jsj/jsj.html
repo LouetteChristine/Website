@@ -17,6 +17,31 @@
             min-height: 100vh;
         }
 
+        /* --- Bouton flottant pour quitter le plein écran --- */
+        .exit-fullscreen-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background-color: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none; /* Caché par défaut */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: background-color 0.2s;
+        }
+        .exit-fullscreen-btn:hover {
+            background-color: #c82333;
+        }
+        body.fullscreen-active .exit-fullscreen-btn {
+            display: block; /* Affiché uniquement en plein écran */
+        }
+
         /* --- Styles pour le mode Plein Écran --- */
         body.fullscreen-active {
             background-color: #1a1a1a;
@@ -232,9 +257,6 @@
         #pauseBtn { background-color: #ffc107; color: #333; }
         #pauseBtn:hover:not(:disabled) { background-color: #e0a800; }
 
-        #continueBtn { background-color: #17a2b8; }
-        #continueBtn:hover:not(:disabled) { background-color: #138496; }
-
         #prevBtn, #nextBtn { background-color: #6c757d; }
         #prevBtn:hover:not(:disabled), #nextBtn:hover:not(:disabled) { background-color: #5a6268; }
         
@@ -412,6 +434,9 @@
 </head>
 <body>
 
+    <!-- Bouton flottant pour quitter le plein écran -->
+    <button id="exitFullscreenBtn" class="exit-fullscreen-btn">✖ Quitter</button>
+
     <div class="controls">
         
         <div class="file-controls">
@@ -464,7 +489,6 @@ Flux de : droite
         <div class="playback-controls">
             <button type="button" id="startBtn">▶ Démarrer</button>
             <button type="button" id="pauseBtn" disabled>⏸ Pause</button>
-            <button type="button" id="continueBtn" disabled>⏵ Continuer</button>
             <button type="button" id="prevBtn" disabled>⏮ Précédent</button>
             <button type="button" id="nextBtn" disabled>Suivant ⏭</button>
         </div>
@@ -497,7 +521,6 @@ Flux de : droite
             <div class="mini-controls">
                 <button type="button" id="miniStartBtn" class="mini-btn">▶▶</button>
                 <button type="button" id="miniPauseBtn" class="mini-btn" disabled>⏸</button>
-                <button type="button" id="miniPlayBtn" class="mini-btn" disabled>▶</button>
                 <button type="button" id="miniPrevBtn" class="mini-btn" disabled>⏮</button>
                 <button type="button" id="miniNextBtn" class="mini-btn" disabled>⏭</button>
             </div>
@@ -546,7 +569,6 @@ Flux de : droite
         
         const startBtn = document.getElementById('startBtn');
         const pauseBtn = document.getElementById('pauseBtn');
-        const continueBtn = document.getElementById('continueBtn');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
         const sequenceInput = document.getElementById('sequenceInput');
@@ -555,6 +577,7 @@ Flux de : droite
         const fileInput = document.getElementById('fileInput');
         const exportBtn = document.getElementById('exportBtn');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const exitFullscreenBtn = document.getElementById('exitFullscreenBtn');
         
         const clickBtn = document.getElementById('clickBtn');
         const ttsBtn = document.getElementById('ttsBtn');
@@ -566,7 +589,6 @@ Flux de : droite
         
         const miniPrevBtn = document.getElementById('miniPrevBtn');
         const miniStartBtn = document.getElementById('miniStartBtn');
-        const miniPlayBtn = document.getElementById('miniPlayBtn');
         const miniPauseBtn = document.getElementById('miniPauseBtn');
         const miniNextBtn = document.getElementById('miniNextBtn');
 
@@ -857,15 +879,20 @@ Flux de : droite
         // ==========================================
         // 3. PLEIN ÉCRAN
         // ==========================================
-        fullscreenBtn.addEventListener('click', () => {
+        function enterFullscreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen();
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
             }
-        });
+        }
+
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+
+        fullscreenBtn.addEventListener('click', enterFullscreen);
+        exitFullscreenBtn.addEventListener('click', exitFullscreen);
 
         document.addEventListener('fullscreenchange', () => {
             if (document.fullscreenElement) {
@@ -1041,12 +1068,10 @@ Flux de : droite
                 miniPauseBtn.textContent = "⏸";
                 miniPauseBtn.disabled = false;
                 
-                continueBtn.disabled = true;
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
                 miniStartBtn.disabled = false; // Toujours actif
-                miniPlayBtn.disabled = true;
                 miniNextBtn.disabled = false;
             } else if (state === 'paused') {
                 startBtn.disabled = false; // Toujours actif
@@ -1055,12 +1080,10 @@ Flux de : droite
                 miniPauseBtn.textContent = "▶";
                 miniPauseBtn.disabled = false;
                 
-                continueBtn.disabled = false;
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
                 miniStartBtn.disabled = false; // Toujours actif
-                miniPlayBtn.disabled = false;
                 miniNextBtn.disabled = false;
             } else if (state === 'stopped') {
                 startBtn.disabled = false;
@@ -1069,12 +1092,10 @@ Flux de : droite
                 miniPauseBtn.textContent = "⏸";
                 miniPauseBtn.disabled = true;
                 
-                continueBtn.disabled = true;
                 prevBtn.disabled = true;
                 nextBtn.disabled = true;
                 miniPrevBtn.disabled = true;
                 miniStartBtn.disabled = false;
-                miniPlayBtn.disabled = true;
                 miniNextBtn.disabled = true;
             } else {
                 startBtn.disabled = false;
@@ -1083,12 +1104,10 @@ Flux de : droite
                 miniPauseBtn.textContent = "⏸";
                 miniPauseBtn.disabled = true;
                 
-                continueBtn.disabled = true;
                 prevBtn.disabled = true;
                 nextBtn.disabled = true;
                 miniPrevBtn.disabled = true;
                 miniStartBtn.disabled = false;
-                miniPlayBtn.disabled = true;
                 miniNextBtn.disabled = true;
             }
         }
@@ -1197,13 +1216,11 @@ Flux de : droite
         pauseBtn.addEventListener('click', togglePauseContinue);
         miniPauseBtn.addEventListener('click', togglePauseContinue);
         
-        continueBtn.addEventListener('click', continueAnimation);
         prevBtn.addEventListener('click', stepBack);
         nextBtn.addEventListener('click', stepForward);
         
         miniPrevBtn.addEventListener('click', stepBack);
         miniStartBtn.addEventListener('click', startAnimation);
-        miniPlayBtn.addEventListener('click', continueAnimation);
         miniNextBtn.addEventListener('click', stepForward);
 
         fileInput.addEventListener('change', (event) => {
@@ -1227,12 +1244,19 @@ Flux de : droite
         // 4. RACCOURCIS CLAVIER (Espace + Flèches)
         // ==========================================
         document.addEventListener('keydown', (e) => {
+            // Si on tape dans une zone de texte, on ignore les raccourcis
             if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
                 return;
             }
 
             if (e.code === 'Space') {
                 e.preventDefault();
+                // Si un bouton a le focus (entouré), on l'enlève pour éviter de le déclencher deux fois
+                if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
+                    document.activeElement.blur();
+                }
+                
+                // Logique de bascule
                 if (intervalId) {
                     pauseAnimation();
                 } else if (sequence.length > 0) {
@@ -1248,6 +1272,11 @@ Flux de : droite
             else if (e.code === 'ArrowRight') {
                 e.preventDefault();
                 if (!nextBtn.disabled) stepForward();
+            }
+            else if (e.code === 'Escape') {
+                if (document.fullscreenElement) {
+                    exitFullscreen();
+                }
             }
         });
     </script>
