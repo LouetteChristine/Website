@@ -1036,47 +1036,59 @@ Flux de : droite
         function setButtonStates(state) {
             if (state === 'playing') {
                 startBtn.disabled = false; // Toujours actif
-                pauseBtn.disabled = false;
+                pauseBtn.disabled = false; // Toujours actif
+                pauseBtn.textContent = "⏸ Pause"; // Texte par défaut
+                miniPauseBtn.textContent = "⏸";
+                miniPauseBtn.disabled = false;
+                
                 continueBtn.disabled = true;
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
                 miniStartBtn.disabled = false; // Toujours actif
                 miniPlayBtn.disabled = true;
-                miniPauseBtn.disabled = false;
                 miniNextBtn.disabled = false;
             } else if (state === 'paused') {
                 startBtn.disabled = false; // Toujours actif
-                pauseBtn.disabled = true;
+                pauseBtn.disabled = false; // Toujours actif
+                pauseBtn.textContent = "⏵ Continuer"; // Change le texte pour indiquer l'action
+                miniPauseBtn.textContent = "▶";
+                miniPauseBtn.disabled = false;
+                
                 continueBtn.disabled = false;
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
                 miniStartBtn.disabled = false; // Toujours actif
                 miniPlayBtn.disabled = false;
-                miniPauseBtn.disabled = true;
                 miniNextBtn.disabled = false;
             } else if (state === 'stopped') {
                 startBtn.disabled = false;
                 pauseBtn.disabled = true;
+                pauseBtn.textContent = "⏸ Pause";
+                miniPauseBtn.textContent = "⏸";
+                miniPauseBtn.disabled = true;
+                
                 continueBtn.disabled = true;
                 prevBtn.disabled = true;
                 nextBtn.disabled = true;
                 miniPrevBtn.disabled = true;
                 miniStartBtn.disabled = false;
                 miniPlayBtn.disabled = true;
-                miniPauseBtn.disabled = true;
                 miniNextBtn.disabled = true;
             } else {
                 startBtn.disabled = false;
                 pauseBtn.disabled = true;
+                pauseBtn.textContent = "⏸ Pause";
+                miniPauseBtn.textContent = "⏸";
+                miniPauseBtn.disabled = true;
+                
                 continueBtn.disabled = true;
                 prevBtn.disabled = true;
                 nextBtn.disabled = true;
                 miniPrevBtn.disabled = true;
                 miniStartBtn.disabled = false;
                 miniPlayBtn.disabled = true;
-                miniPauseBtn.disabled = true;
                 miniNextBtn.disabled = true;
             }
         }
@@ -1144,6 +1156,15 @@ Flux de : droite
             }
         }
 
+        // NOUVELLE FONCTION : Bascule entre Pause et Continuer
+        function togglePauseContinue() {
+            if (intervalId) {
+                pauseAnimation();
+            } else if (sequence.length > 0) {
+                continueAnimation();
+            }
+        }
+
         function stepBack() {
             if (sequence.length === 0) return;
             initAudio();
@@ -1171,7 +1192,11 @@ Flux de : droite
         }
 
         startBtn.addEventListener('click', startAnimation);
-        pauseBtn.addEventListener('click', pauseAnimation);
+        
+        // Le bouton Pause fait maintenant office de bascule (Toggle)
+        pauseBtn.addEventListener('click', togglePauseContinue);
+        miniPauseBtn.addEventListener('click', togglePauseContinue);
+        
         continueBtn.addEventListener('click', continueAnimation);
         prevBtn.addEventListener('click', stepBack);
         nextBtn.addEventListener('click', stepForward);
@@ -1179,7 +1204,6 @@ Flux de : droite
         miniPrevBtn.addEventListener('click', stepBack);
         miniStartBtn.addEventListener('click', startAnimation);
         miniPlayBtn.addEventListener('click', continueAnimation);
-        miniPauseBtn.addEventListener('click', pauseAnimation);
         miniNextBtn.addEventListener('click', stepForward);
 
         fileInput.addEventListener('change', (event) => {
@@ -1211,9 +1235,9 @@ Flux de : droite
                 e.preventDefault();
                 if (intervalId) {
                     pauseAnimation();
-                } else if (sequence.length > 0 && continueBtn.disabled === false) {
+                } else if (sequence.length > 0) {
                     continueAnimation();
-                } else if (sequence.length === 0 || startBtn.disabled === false) {
+                } else {
                     startAnimation();
                 }
             }
