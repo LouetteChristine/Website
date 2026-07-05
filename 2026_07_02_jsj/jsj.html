@@ -748,23 +748,39 @@ Flux de : droite
             return `${m}:${s.toString().padStart(2, '0')}`;
         }
 
+        // Fonction utilitaire pour formatter le texte destiné à la voix
+        function formatForTTS(text) {
+            // 1. Retire les zéros initiaux des nombres (ex: "04" -> "4", "01" -> "1")
+            let val = text.replace(/\b0+(\d)/g, '$1');
+            // 2. Remplace g/d par gauche/droit
+            val = val.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit');
+            return val;
+        }
+
         function updateDisplay(shouldSpeak = true) {
             if (sequence.length === 0) return;
             const step = sequence[currentIndex];
             
             // Logique voix pour les changements manuels (Précédent / Suivant)
             if (shouldSpeak && enableTTS && previousStep) {
+                let gChanged = step.gauche !== previousStep.gauche;
+                let dChanged = step.droite !== previousStep.droite;
+                let gHasNum = /\d/.test(step.gauche);
+                let dHasNum = /\d/.test(step.droite);
+                
                 let textsToSpeak = [];
-                if (step.gauche !== previousStep.gauche) {
-                    let valG = step.gauche.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit'); // Modifié ici
-                    textsToSpeak.push("Main gauche, " + valG);
-                }
-                if (step.droite !== previousStep.droite) {
-                    let valD = step.droite.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit'); // Modifié ici
-                    textsToSpeak.push("Main droite, " + valD);
-                }
-                if (textsToSpeak.length > 0) {
-                    speakTexts(textsToSpeak);
+                
+                // Pas de voix si les 2 zones ont changé et ne contiennent pas de chiffre
+                if (!(gChanged && dChanged && !gHasNum && !dHasNum)) {
+                    if (gChanged && gHasNum) {
+                        textsToSpeak.push("Main gauche, " + formatForTTS(step.gauche));
+                    }
+                    if (dChanged && dHasNum) {
+                        textsToSpeak.push("Main droite, " + formatForTTS(step.droite));
+                    }
+                    if (textsToSpeak.length > 0) {
+                        speakTexts(textsToSpeak);
+                    }
                 }
             }
             previousStep = step; 
@@ -826,15 +842,23 @@ Flux de : droite
                     if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
                         // Fin de la séquence, on ne dit rien
                     } else {
-                        if (nextStep.gauche !== currentStep.gauche) {
-                            let valG = nextStep.gauche.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit'); // Modifié ici
-                            textsToSpeak.push("Main gauche, " + valG);
+                        let gChanged = nextStep.gauche !== currentStep.gauche;
+                        let dChanged = nextStep.droite !== currentStep.droite;
+                        let gHasNum = /\d/.test(nextStep.gauche);
+                        let dHasNum = /\d/.test(nextStep.droite);
+
+                        // Pas de voix si les 2 zones ont changé et ne contiennent pas de chiffre
+                        if (!(gChanged && dChanged && !gHasNum && !dHasNum)) {
+                            if (gChanged && gHasNum) {
+                                textsToSpeak.push("Main gauche, " + formatForTTS(nextStep.gauche));
+                            }
+                            if (dChanged && dHasNum) {
+                                textsToSpeak.push("Main droite, " + formatForTTS(nextStep.droite));
+                            }
+                            if (textsToSpeak.length > 0) {
+                                speakTexts(textsToSpeak);
+                            }
                         }
-                        if (nextStep.droite !== currentStep.droite) {
-                            let valD = nextStep.droite.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit'); // Modifié ici
-                            textsToSpeak.push("Main droite, " + valD);
-                        }
-                        speakTexts(textsToSpeak);
                     }
                 }
             }
