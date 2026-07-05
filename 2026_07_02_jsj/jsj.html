@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head> 
+<head>  
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mains Gauche et Droite</title>
@@ -71,7 +71,6 @@
             color: #666;
         }
         
-        /* finger-info visible en plein écran avec des couleurs claires */
         body.fullscreen-active .finger-info {
             color: #aaaaaa;
         }
@@ -83,7 +82,6 @@
             display: none;
         }
 
-        /* --- Ajustement Plein Écran sur GSM (mobile) --- */
         @media screen and (max-width: 600px) {
             body.fullscreen-active .display-area {
                 flex-direction: column;
@@ -213,7 +211,6 @@
             cursor: pointer;
         }
 
-        /* --- Zone pour les contrôles de lecture et navigation --- */
         .playback-controls {
             display: flex;
             justify-content: center;
@@ -240,7 +237,17 @@
 
         #prevBtn, #nextBtn { background-color: #6c757d; }
         #prevBtn:hover:not(:disabled), #nextBtn:hover:not(:disabled) { background-color: #5a6268; }
+        
+        /* Styles des boutons Clic et Voix */
+        #clickBtn { background-color: #6c757d; }
+        #clickBtn:hover:not(.click-active) { background-color: #5a6268; }
+        #clickBtn.click-active { background-color: #007bff; }
+        #clickBtn.click-active:hover { background-color: #0069d9; }
 
+        #ttsBtn { background-color: #6c757d; }
+        #ttsBtn:hover:not(.tts-active) { background-color: #5a6268; }
+        #ttsBtn.tts-active { background-color: #e83e8c; }
+        #ttsBtn.tts-active:hover { background-color: #d63384; }
 
         .display-area {
             display: flex;
@@ -324,7 +331,6 @@
             border-radius: 5px;
         }
 
-        /* --- Style pour le conteneur Étape + Boutons discrets --- */
         .counter-wrapper {
             display: flex;
             align-items: center;
@@ -404,8 +410,7 @@
             <button type="button" id="exportBtn">Exporter</button>
         </div>
 
-        <!-- Séquence par défaut mise à jour -->
-        <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">Le foie
+        <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">Le foie:
 Flux de : gauche
 04 g : 22 d
 04 g : 14 d
@@ -432,6 +437,8 @@ Flux de : droite
             </div>
 
             <button type="button" id="fullscreenBtn">Plein Écran</button>
+            <button type="button" id="clickBtn">🔊 Clic : Off</button>
+            <button type="button" id="ttsBtn">🗣 Voix : Off</button>
 
             <div class="spacer"></div>
 
@@ -476,8 +483,8 @@ Flux de : droite
             </div>
             <div class="mini-controls">
                 <button type="button" id="miniStartBtn" class="mini-btn">▶▶</button>
-                 <button type="button" id="miniPauseBtn" class="mini-btn" disabled>⏸</button>
-                 <button type="button" id="miniPlayBtn" class="mini-btn" disabled>▶</button>
+                <button type="button" id="miniPauseBtn" class="mini-btn" disabled>⏸</button>
+                <button type="button" id="miniPlayBtn" class="mini-btn" disabled>▶</button>
                 <button type="button" id="miniPrevBtn" class="mini-btn" disabled>⏮</button>
                 <button type="button" id="miniNextBtn" class="mini-btn" disabled>⏭</button>
             </div>
@@ -505,6 +512,11 @@ Flux de : droite
         
         let audioContext = null;
         let clickWarningPlayed = false;
+        
+        // Variables séparées pour le clic et la voix
+        let enableClick = false;
+        let enableTTS = false;
+        let previousStep = null;
 
         // Éléments DOM
         const gaucheText = document.getElementById('gaucheText');
@@ -530,10 +542,12 @@ Flux de : droite
         const exportBtn = document.getElementById('exportBtn');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
         
+        const clickBtn = document.getElementById('clickBtn');
+        const ttsBtn = document.getElementById('ttsBtn');
+        
         const raccourcisBtn = document.getElementById('raccourcisBtn');
         const localisationBtn = document.getElementById('localisationBtn');
         
-        // Mini boutons
         const miniPrevBtn = document.getElementById('miniPrevBtn');
         const miniStartBtn = document.getElementById('miniStartBtn');
         const miniPlayBtn = document.getElementById('miniPlayBtn');
@@ -541,10 +555,106 @@ Flux de : droite
         const miniNextBtn = document.getElementById('miniNextBtn');
 
         // ==========================================
+        // FONCTIONS DE PARSE ET MAJ COMPTEUR
+        // ==========================================
+        function parseSequenceInput(text) {
+            const lines = text.trim().split('\n');
+            const parsedSeq = [];
+            for (let line of lines) {
+                if (line.trim() === '') continue; 
+                
+                // IGNORE LA LIGNE S'IL N'Y A AUCUN CHIFFRE DÉDUIT
+                if (!/\d/.test(line)) continue;
+
+                const parts = line.split(':');
+                if (parts.length === 2) {
+                    parsedSeq.push({
+                        gauche: parts[0].trim(),
+                        droite: parts[1].trim()
+                    });
+                }
+            }
+            return parsedSeq;
+        }
+
+        function updateTotalCounter() {
+            const parsedSeq = parseSequenceInput(sequenceInput.value);
+            totalCounter.textContent = parsedSeq.length;
+        }
+
+        // ==========================================
+        // BOUTONS CLIC ET VOIX
+        // ==========================================
+        clickBtn.addEventListener('click', () => {
+            enableClick = !enableClick;
+            clickBtn.textContent = enableClick ? "🔊 Clic : On" : "🔊 Clic : Off";
+            clickBtn.classList.toggle('click-active', enableClick);
+            saveSettings();
+        });
+
+        ttsBtn.addEventListener('click', () => {
+            enableTTS = !enableTTS;
+            ttsBtn.textContent = enableTTS ? "🗣 Voix : On" : "🗣 Voix : Off";
+            ttsBtn.classList.toggle('tts-active', enableTTS);
+            if (!enableTTS && window.speechSynthesis) {
+                window.speechSynthesis.cancel(); 
+            }
+            saveSettings();
+        });
+
+        function speakTexts(texts) {
+            if (!window.speechSynthesis || !enableTTS) return;
+            window.speechSynthesis.cancel(); 
+            
+            texts.forEach(t => {
+                const utterance = new SpeechSynthesisUtterance(t);
+                utterance.lang = 'fr-FR';
+                utterance.rate = 1.1; 
+                window.speechSynthesis.speak(utterance);
+            });
+        }
+
+        // FONCTION pour formater le texte (enlever le 0 initial et convertir g/d)
+        function formatSpokenValue(val) {
+            let cleanedVal = val.replace(/\b0(\d)\b/i, '$1');
+            cleanedVal = cleanedVal.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit');
+            return cleanedVal;
+        }
+
+        // FONCTION pour calculer exactement ce qui doit être dit
+        function getVoiceTexts(oldStep, newStep) {
+            let textsToSpeak = [];
+            if (!oldStep || !newStep) return textsToSpeak;
+
+            let leftChanged = newStep.gauche !== oldStep.gauche;
+            let rightChanged = newStep.droite !== oldStep.droite;
+
+            if (!leftChanged && !rightChanged) return textsToSpeak;
+
+            let bothChanged = leftChanged && rightChanged;
+            let leftHasDigit = /\d/.test(newStep.gauche);
+            let rightHasDigit = /\d/.test(newStep.droite);
+
+            // SEULE RÈGLE : Si les deux zones sont rouges ET aucune n'a de chiffre -> on ne dit rien
+            if (bothChanged && !leftHasDigit && !rightHasDigit) {
+                return textsToSpeak;
+            }
+
+            // SINON : on prononce toutes les zones rouges (celles qui ont changé)
+            if (leftChanged) {
+                textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
+            }
+            if (rightChanged) {
+                textsToSpeak.push("Main droite, " + formatSpokenValue(newStep.droite));
+            }
+
+            return textsToSpeak;
+        }
+
+        // ==========================================
         // 1. SCRIPT DE SAUVEGARDE (LocalStorage)
         // ==========================================
         
-        // Séquence par défaut si rien dans le localStorage
         const defaultSequenceText = `Le foie\nFlux de : gauche\n04 g : 22 d\n04 g : 14 d\n04 g : 01 g\n04 g : 05 g\n04 g : 18 g\n04 d : 18 g\nFlux de : droite\n22 g : 04 d\n14 g : 04 d\n01 d : 04 d\n05 d : 04 d\n18 d : 04 d\n18 d : 04 g`;
 
         function saveSettings() {
@@ -552,7 +662,9 @@ Flux de : droite
                 sequence: sequenceInput.value,
                 minutes: minutesInput.value,
                 seconds: secondsInput.value,
-                loop: loopCheckbox.checked
+                loop: loopCheckbox.checked,
+                click: enableClick,
+                tts: enableTTS
             };
             localStorage.setItem('mainsGD_settings', JSON.stringify(settings));
         }
@@ -565,18 +677,29 @@ Flux de : droite
                 minutesInput.value = settings.minutes !== undefined ? settings.minutes : 1;
                 secondsInput.value = settings.seconds !== undefined ? settings.seconds : 0;
                 loopCheckbox.checked = settings.loop !== undefined ? settings.loop : true;
+                
+                enableClick = settings.click || false;
+                clickBtn.textContent = enableClick ? "🔊 Clic : On" : "🔊 Clic : Off";
+                clickBtn.classList.toggle('click-active', enableClick);
+
+                enableTTS = settings.tts || false;
+                ttsBtn.textContent = enableTTS ? "🗣 Voix : On" : "🗣 Voix : Off";
+                ttsBtn.classList.toggle('tts-active', enableTTS);
             } else {
-                // Chargement par défaut si premier lancement
                 sequenceInput.value = defaultSequenceText;
             }
         }
 
-        sequenceInput.addEventListener('input', saveSettings);
+        sequenceInput.addEventListener('input', () => {
+            saveSettings();
+            updateTotalCounter();
+        });
         minutesInput.addEventListener('input', saveSettings);
         secondsInput.addEventListener('input', saveSettings);
         loopCheckbox.addEventListener('change', saveSettings);
 
         loadSettings();
+        updateTotalCounter();
 
         // ==========================================
         // 2. EXPORT DE FICHIER
@@ -648,9 +771,16 @@ Flux de : droite
         }
 
         function playClickClick() {
-            if (!audioContext) return;
+            if (!audioContext || !enableClick) return;
             playClickSound(0);      
             playClickSound(0.12);   
+        }
+
+        function playEndClicks() {
+            if (!audioContext || !enableClick) return;
+            for (let i = 0; i < 5; i++) {
+                playClickSound(i * 0.5); 
+            }
         }
 
         function getIntervalSeconds() {
@@ -665,25 +795,18 @@ Flux de : droite
             return `${m}:${s.toString().padStart(2, '0')}`;
         }
 
-        function parseSequenceInput(text) {
-            const lines = text.trim().split('\n');
-            const parsedSeq = [];
-            for (let line of lines) {
-                if (line.trim() === '') continue; 
-                const parts = line.split(':');
-                if (parts.length === 2) {
-                    parsedSeq.push({
-                        gauche: parts[0].trim(),
-                        droite: parts[1].trim()
-                    });
-                }
-            }
-            return parsedSeq;
-        }
-
-        function updateDisplay() {
+        function updateDisplay(shouldSpeak = true) {
             if (sequence.length === 0) return;
             const step = sequence[currentIndex];
+            
+            if (shouldSpeak && enableTTS && previousStep) {
+                let textsToSpeak = getVoiceTexts(previousStep, step);
+                if (textsToSpeak.length > 0) {
+                    speakTexts(textsToSpeak);
+                }
+            }
+            previousStep = step; 
+
             gaucheText.textContent = step.gauche;
             droiteText.textContent = step.droite;
             stepCounter.textContent = (currentIndex + 1);
@@ -723,9 +846,26 @@ Flux de : droite
             const progressPercent = (elapsed / intervalTime) * 100;
             progressBar.style.width = Math.min(100, progressPercent) + '%';
 
-            if (remaining <= 2.0 && remaining > 0 && !clickWarningPlayed) {
-                playClickClick();
+            if (remaining <= 5.0 && remaining > 0 && !clickWarningPlayed) {
+                if (enableClick) {
+                    playClickClick();
+                }
                 clickWarningPlayed = true;
+                
+                if (enableTTS && sequence.length > 0) {
+                    const currentStep = sequence[currentIndex];
+                    const nextIdx = (currentIndex + 1) % sequence.length;
+                    const nextStep = sequence[nextIdx];
+                    
+                    if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
+                        // Fin de la séquence, on ne dit rien
+                    } else {
+                        let textsToSpeak = getVoiceTexts(currentStep, nextStep);
+                        if (textsToSpeak.length > 0) {
+                            speakTexts(textsToSpeak);
+                        }
+                    }
+                }
             }
 
             if (elapsed >= intervalTime) {
@@ -733,11 +873,12 @@ Flux de : droite
                     clearInterval(intervalId);
                     intervalId = null;
                     setButtonStates('stopped');
+                    playEndClicks(); // Lance les 5 clics de fin
                     return;
                 }
 
                 currentIndex = (currentIndex + 1) % sequence.length;
-                updateDisplay();
+                updateDisplay(false); 
                 lastUpdateTime = Date.now();
             }
         }
@@ -806,13 +947,14 @@ Flux de : droite
             }
             totalCounter.textContent = sequence.length;
             currentIndex = 0;
+            previousStep = null; 
             
             if (isNaN(intervalTime) || intervalTime <= 0) {
                 alert("Veuillez entrer un temps valide (supérieur à 0).");
                 return;
             }
             
-            updateDisplay();
+            updateDisplay(false); 
             lastUpdateTime = Date.now();
             intervalId = setInterval(tick, tickRate);
             setButtonStates('playing');
@@ -842,8 +984,10 @@ Flux de : droite
 
         function stepBack() {
             if (sequence.length === 0) return;
+            initAudio();
+            if (enableClick) playClickClick(); 
             currentIndex = (currentIndex - 1 + sequence.length) % sequence.length;
-            updateDisplay();
+            updateDisplay(); 
             lastUpdateTime = Date.now();
             if (intervalId) {
                 clearInterval(intervalId);
@@ -853,8 +997,10 @@ Flux de : droite
 
         function stepForward() {
             if (sequence.length === 0) return;
+            initAudio();
+            if (enableClick) playClickClick(); 
             currentIndex = (currentIndex + 1) % sequence.length;
-            updateDisplay();
+            updateDisplay(); 
             lastUpdateTime = Date.now();
             if (intervalId) {
                 clearInterval(intervalId);
@@ -862,14 +1008,12 @@ Flux de : droite
             }
         }
 
-        // Écouteurs des boutons principaux
         startBtn.addEventListener('click', startAnimation);
         pauseBtn.addEventListener('click', pauseAnimation);
         continueBtn.addEventListener('click', continueAnimation);
         prevBtn.addEventListener('click', stepBack);
         nextBtn.addEventListener('click', stepForward);
         
-        // Écouteurs des mini boutons
         miniPrevBtn.addEventListener('click', stepBack);
         miniStartBtn.addEventListener('click', startAnimation);
         miniPlayBtn.addEventListener('click', continueAnimation);
@@ -883,6 +1027,7 @@ Flux de : droite
                 reader.onload = (e) => {
                     sequenceInput.value = e.target.result;
                     saveSettings();
+                    updateTotalCounter();
                     location.reload(); 
                 };
                 reader.readAsText(file);
@@ -922,4 +1067,3 @@ Flux de : droite
     </script>
 </body>
 </html>
-
