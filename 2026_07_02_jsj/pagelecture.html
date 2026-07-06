@@ -45,13 +45,89 @@
     line-height: 0.9;
     letter-spacing: -0.04em;
   }
+  
+  /* --- Bouton Plein Ecran Discret --- */
+  .fullscreen-btn {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    background: rgba(12, 10, 9, 0.6);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 12px;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 50;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+  }
+  .fullscreen-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
   .editor-wrap {
     position: relative;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 24px;
-    padding: 8px;
     backdrop-filter: blur(10px);
+    overflow: hidden;
+  }
+  .editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(245, 158, 11, 0.1);
+  }
+  .editor-title {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .editor-actions {
+    display: flex;
+    gap: 4px;
+  }
+  .btn-subtle {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .btn-subtle:hover {
+    color: var(--accent);
+    border-color: var(--border);
+    background: var(--accent-soft);
+  }
+  .btn-subtle svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .editor-body {
+    position: relative;
   }
   textarea {
     width: 100%;
@@ -67,8 +143,10 @@
     min-height: 280px;
     font-weight: 400;
     caret-color: var(--accent);
+    display: block;
   }
   textarea::placeholder { color: rgba(168, 162, 158, 0.4); font-style: italic; }
+  
   .btn {
     background: var(--card);
     border: 1px solid var(--border);
@@ -146,7 +224,6 @@
     color: var(--bg);
   }
 
-  /* === SLIDER DE VITESSE === */
   .speed-slider-wrap {
     position: relative;
     width: 100%;
@@ -260,9 +337,9 @@
 
   .reading-display {
     position: absolute;
-    inset: 8px;
+    inset: 0;
     background: var(--bg-soft);
-    border-radius: 16px;
+    border-radius: 0;
     padding: 32px;
     font-family: 'Fraunces', serif;
     font-size: 1.5rem;
@@ -283,8 +360,15 @@
     color: var(--bg);
     font-weight: 600;
   }
+  .visualizer-bar {
+    border-top: 1px solid rgba(245, 158, 11, 0.1);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
   .visualizer {
-    height: 80px;
+    height: 60px;
     width: 100%;
     display: flex;
     align-items: center;
@@ -312,9 +396,6 @@
     font-size: 1.5rem;
     line-height: 1.2;
     font-variant-numeric: tabular-nums;
-  }
-  .stat-value.live-time {
-    color: var(--accent-bright);
   }
   .dot {
     width: 8px; height: 8px;
@@ -395,6 +476,13 @@
 <div class="glow-orb" style="width: 500px; height: 500px; background: var(--accent); top: -150px; right: -150px;"></div>
 <div class="glow-orb" style="width: 350px; height: 350px; background: var(--danger); bottom: -100px; left: -100px; opacity: 0.18;"></div>
 
+<!-- Bouton Plein Ecran -->
+<button class="fullscreen-btn" id="fullscreenBtn" aria-label="Basculer en plein écran">
+  <svg id="fsIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+  </svg>
+</button>
+
 <div class="relative z-10 max-w-5xl mx-auto px-6 py-12 md:py-16">
 
   <header class="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-12">
@@ -425,9 +513,32 @@
   </header>
 
   <section class="editor-wrap mb-8">
-    <textarea id="textInput" placeholder="Écrivez ici le texte que vous souhaitez entendre..."></textarea>
-    <div class="reading-display hidden" id="readingDisplay"></div>
-    <div class="border-t border-stone-800/80 px-4 py-2 flex items-center gap-4">
+    <div class="editor-header">
+      <div class="editor-title">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-4-6zm-1 7V3.5L18.5 9H13z"/></svg>
+        Éditeur
+      </div>
+      <div class="editor-actions">
+        <input type="file" id="fileInput" accept=".txt,.md,text/plain" class="hidden">
+        <button class="btn-subtle" id="importBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+          </svg>
+          Importer
+        </button>
+        <button class="btn-subtle" id="exportBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Exporter
+        </button>
+      </div>
+    </div>
+    <div class="editor-body">
+      <textarea id="textInput" placeholder="Écrivez ici le texte que vous souhaitez entendre..."></textarea>
+      <div class="reading-display hidden" id="readingDisplay"></div>
+    </div>
+    <div class="visualizer-bar">
       <div class="text-xs text-stone-500 tracking-widest uppercase hidden md:block">Onde</div>
       <div class="visualizer flex-1" id="visualizer"></div>
       <div class="text-xs tracking-widest uppercase font-variant-numeric tabular-nums" style="color: var(--accent);">
@@ -531,6 +642,11 @@
   const statusDot = document.getElementById('statusDot');
   const toast = document.getElementById('toast');
   const visualizer = document.getElementById('visualizer');
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  const fsIcon = document.getElementById('fsIcon');
+  const fileInput = document.getElementById('fileInput');
+  const importBtn = document.getElementById('importBtn');
+  const exportBtn = document.getElementById('exportBtn');
 
   // === État ===
   let utterance = null;
@@ -545,10 +661,9 @@
   let elapsedBeforePause = 0;
   let liveTimerId = null;
 
-  // Mots par minute de référence à 1.0× (parlé français moyen)
   const WPM_BASE = 160;
 
-  // === Heuristique genre voix ===
+  // === Heuristique voix ===
   const femaleHints = ['amelie', 'amélie', 'hortense', 'marie', 'julie', 'virginie', 'audrey', 'céline', 'celine', 'hélène', 'helene', 'alice', 'google français', 'google french', 'fiona', 'samantha', 'victoria', 'karen', 'moira', 'tessa', 'veena', 'léna', 'lena', 'jill', 'paulina', 'yuna', 'amira', 'carla', 'katja'];
   const maleHints = ['thomas', 'paul', 'nicolas', 'jean-pierre', 'pierre', 'marc', 'daniel', 'jorge', 'diego', 'oliver', 'arthur', 'julien', 'antoine', 'hugo', 'lucas', 'rishi', 'yannick', 'yanick', 'henri', 'loic', 'loïc', 'jaume', 'xander'];
 
@@ -598,14 +713,13 @@
   }
   animateVisualizer();
 
-  // === Chargement des voix ===
+  // === Voix ===
   function loadVoices() {
     voices = window.speechSynthesis.getVoices().filter(v =>
       v.lang && v.lang.toLowerCase().startsWith('fr')
     );
     pickVoice();
   }
-
   function pickVoice() {
     if (voices.length === 0) {
       voiceNameEl.textContent = 'Aucune voix française détectée';
@@ -622,7 +736,6 @@
       voiceNameEl.textContent = `${currentVoice.name} · aucune voix ${genre} trouvée`;
     }
   }
-
   if (window.speechSynthesis) {
     window.speechSynthesis.onvoiceschanged = loadVoices;
     loadVoices();
@@ -630,7 +743,7 @@
     setTimeout(loadVoices, 1000);
   }
 
-  // === Formatage du temps ===
+  // === Temps ===
   function formatDuration(secs) {
     secs = Math.max(0, Math.round(secs));
     if (secs < 60) return secs + 's';
@@ -645,14 +758,12 @@
     return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   }
 
-  // === Stats texte ===
+  // === Stats ===
   function getEstimatedSeconds(text, speed) {
     const words = text.trim().split(/\s+/).filter(Boolean);
-    const wordCount = words.length;
-    if (wordCount === 0) return 0;
-    return (wordCount / (WPM_BASE * speed)) * 60;
+    if (words.length === 0) return 0;
+    return (words.length / (WPM_BASE * speed)) * 60;
   }
-
   function updateStats() {
     const text = textInput.value;
     const words = text.trim().split(/\s+/).filter(Boolean);
@@ -664,7 +775,6 @@
     durationAtSpeed.textContent = formatDuration(speedSecs);
   }
 
-  // === Texte par défaut ===
   textInput.value = "Bienvenue dans Récit, votre studio de synthèse vocale. Écrivez ici le texte que vous souhaitez entendre, puis choisissez une voix et ajustez la vitesse. Chaque mot sera mis en lumière au rythme de la narration, comme une partition qui prend vie.";
   updateStats();
   textInput.addEventListener('input', updateStats);
@@ -678,7 +788,7 @@
     toastTimeout = setTimeout(() => toast.classList.remove('show'), 2800);
   }
 
-  // === Affichage lecture + surlignage ===
+  // === Affichage lecture ===
   function showReadingDisplay(text) {
     textInput.style.visibility = 'hidden';
     readingDisplay.classList.remove('hidden');
@@ -694,45 +804,32 @@
       html += `<span class="word" data-start="${match.index}" data-end="${match.index + match[0].length}">${match[0]}</span>`;
       lastIndex = match.index + match[0].length;
     }
-    if (lastIndex < text.length) {
-      html += text.substring(lastIndex);
-    }
+    if (lastIndex < text.length) html += text.substring(lastIndex);
     readingDisplay.innerHTML = html;
     wordSpans = readingDisplay.querySelectorAll('.word');
     readingDisplay.scrollTop = 0;
   }
-
   function hideReadingDisplay() {
     readingDisplay.classList.add('hidden');
     readingDisplay.innerHTML = '';
     textInput.style.visibility = 'visible';
     wordSpans = [];
   }
-
   function highlightWord(charIndex) {
     if (!wordSpans.length) return;
     let target = null;
     for (let i = 0; i < wordSpans.length; i++) {
       const start = parseInt(wordSpans[i].dataset.start);
       const end = parseInt(wordSpans[i].dataset.end);
-      if (charIndex >= start && charIndex < end) {
-        target = wordSpans[i];
-        break;
-      }
-      if (charIndex < start) {
-        target = wordSpans[i];
-        break;
-      }
+      if (charIndex >= start && charIndex < end) { target = wordSpans[i]; break; }
+      if (charIndex < start) { target = wordSpans[i]; break; }
     }
     if (!target && wordSpans.length > 0) {
       let minDist = Infinity;
       for (let i = 0; i < wordSpans.length; i++) {
         const start = parseInt(wordSpans[i].dataset.start);
         const dist = Math.abs(start - charIndex);
-        if (dist < minDist) {
-          minDist = dist;
-          target = wordSpans[i];
-        }
+        if (dist < minDist) { minDist = dist; target = wordSpans[i]; }
       }
     }
     wordSpans.forEach(s => s.classList.remove('active'));
@@ -746,7 +843,7 @@
     }
   }
 
-  // === Chronomètre de lecture ===
+  // === Chrono ===
   function startLiveTimer() {
     readingStartTime = performance.now() - elapsedBeforePause * 1000;
     if (liveTimerId) clearInterval(liveTimerId);
@@ -762,9 +859,7 @@
     elapsedBeforePause = 0;
   }
   function pauseLiveTimer() {
-    if (readingStartTime) {
-      elapsedBeforePause = (performance.now() - readingStartTime) / 1000;
-    }
+    if (readingStartTime) elapsedBeforePause = (performance.now() - readingStartTime) / 1000;
   }
   function resumeLiveTimer() {
     readingStartTime = performance.now() - elapsedBeforePause * 1000;
@@ -773,22 +868,11 @@
   // === Lecture ===
   function startReading() {
     const text = textInput.value.trim();
-    if (!text) {
-      showToast('Écrivez d\'abord du texte à lire');
-      textInput.focus();
-      return;
-    }
-    if (!currentVoice) {
-      showToast('Aucune voix française disponible sur ce navigateur');
-      return;
-    }
-    if (!window.speechSynthesis) {
-      showToast('Synthèse vocale non supportée par ce navigateur');
-      return;
-    }
+    if (!text) { showToast('Écrivez d\'abord du texte à lire'); textInput.focus(); return; }
+    if (!currentVoice) { showToast('Aucune voix française disponible'); return; }
+    if (!window.speechSynthesis) { showToast('Synthèse vocale non supportée'); return; }
 
     window.speechSynthesis.cancel();
-
     utterance = new SpeechSynthesisUtterance(text);
     utterance.voice = currentVoice;
     utterance.lang = currentVoice.lang || 'fr-FR';
@@ -799,31 +883,22 @@
     showReadingDisplay(text);
 
     utterance.onstart = () => {
-      isPlaying = true;
-      isPaused = false;
-      elapsedBeforePause = 0;
-      updatePlayButton();
-      statusDot.classList.add('live');
+      isPlaying = true; isPaused = false; elapsedBeforePause = 0;
+      updatePlayButton(); statusDot.classList.add('live');
       durationLabel.textContent = 'Temps écoulé';
       startLiveTimer();
     };
-
     utterance.onend = () => {
-      isPlaying = false;
-      isPaused = false;
-      updatePlayButton();
-      statusDot.classList.remove('live');
+      isPlaying = false; isPaused = false;
+      updatePlayButton(); statusDot.classList.remove('live');
       hideReadingDisplay();
       durationLabel.textContent = 'Durée estimée';
       stopLiveTimer();
       durationEl.textContent = formatDuration(getEstimatedSeconds(textInput.value, 1.0));
     };
-
     utterance.onerror = (e) => {
-      isPlaying = false;
-      isPaused = false;
-      updatePlayButton();
-      statusDot.classList.remove('live');
+      isPlaying = false; isPaused = false;
+      updatePlayButton(); statusDot.classList.remove('live');
       hideReadingDisplay();
       durationLabel.textContent = 'Durée estimée';
       stopLiveTimer();
@@ -832,59 +907,41 @@
         showToast('Erreur de lecture : ' + e.error);
       }
     };
-
     utterance.onboundary = (e) => {
-      if (e.name === 'word' || !e.name) {
-        highlightWord(e.charIndex);
-      }
+      if (e.name === 'word' || !e.name) highlightWord(e.charIndex);
     };
 
-    setTimeout(() => {
-      window.speechSynthesis.speak(utterance);
-    }, 60);
+    setTimeout(() => window.speechSynthesis.speak(utterance), 60);
   }
-
   function togglePause() {
     if (!isPlaying) return;
     if (!isPaused) {
-      window.speechSynthesis.pause();
-      isPaused = true;
-      pauseLiveTimer();
+      window.speechSynthesis.pause(); isPaused = true; pauseLiveTimer();
     } else {
-      window.speechSynthesis.resume();
-      isPaused = false;
-      resumeLiveTimer();
+      window.speechSynthesis.resume(); isPaused = false; resumeLiveTimer();
     }
     updatePlayButton();
   }
-
   function stopReading() {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    isPlaying = false;
-    isPaused = false;
-    updatePlayButton();
-    statusDot.classList.remove('live');
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    isPlaying = false; isPaused = false;
+    updatePlayButton(); statusDot.classList.remove('live');
     hideReadingDisplay();
     durationLabel.textContent = 'Durée estimée';
     stopLiveTimer();
     durationEl.textContent = formatDuration(getEstimatedSeconds(textInput.value, 1.0));
   }
-
   function updatePlayButton() {
     if (isPlaying && !isPaused) {
       playIcon.innerHTML = '<path d="M6 4h4v16H6zm8 0h4v16h-4z"/>';
       playBtn.classList.add('playing');
-      playBtn.setAttribute('aria-label', 'Pause');
     } else {
       playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
       playBtn.classList.remove('playing');
-      playBtn.setAttribute('aria-label', 'Lecture');
     }
   }
 
-  // === Slider de vitesse ===
+  // === Vitesse ===
   function updateSliderFill() {
     const min = parseFloat(speedSlider.min);
     const max = parseFloat(speedSlider.max);
@@ -898,58 +955,87 @@
       m.classList.toggle('active', Math.abs(v - currentSpeed) < 0.001);
     });
   }
-
   speedSlider.addEventListener('input', () => {
     currentSpeed = parseFloat(speedSlider.value);
     speedDisplay.innerHTML = currentSpeed.toFixed(2) + '<span style="font-size: 1.2rem; opacity: 0.6;">×</span>';
-    updateSliderFill();
-    updateActiveMark();
-    updateStats();
-    // Pendant la lecture : on met à jour l'estimation à la nouvelle vitesse
+    updateSliderFill(); updateActiveMark(); updateStats();
     if (isPlaying || isPaused) {
       durationAtSpeed.textContent = formatDuration(getEstimatedSeconds(textInput.value, currentSpeed));
     }
   });
-
-  // Applique une vitesse et relance la lecture si besoin
   function applySpeed(newSpeed, restart = true) {
     currentSpeed = newSpeed;
     speedSlider.value = newSpeed;
     speedDisplay.innerHTML = currentSpeed.toFixed(2) + '<span style="font-size: 1.2rem; opacity: 0.6;">×</span>';
-    updateSliderFill();
-    updateActiveMark();
-    updateStats();
+    updateSliderFill(); updateActiveMark(); updateStats();
     if (restart && (isPlaying || isPaused)) {
-      // Mémoriser le temps écoulé pour le reprendre approximativement
-      const wasElapsed = elapsedBeforePause || ((performance.now() - readingStartTime) / 1000);
       stopReading();
-      // On ne reprend pas exactement au même point — on relance depuis le début du texte
-      // (limitation de l'API Web Speech)
-      setTimeout(() => {
-        startReading();
-      }, 120);
+      setTimeout(() => startReading(), 120);
     }
   }
+  speedMarks.forEach(mark => mark.addEventListener('click', () => applySpeed(parseFloat(mark.dataset.value))));
+  updateSliderFill(); updateActiveMark();
 
-  // Clic sur repères
-  speedMarks.forEach(mark => {
-    mark.addEventListener('click', () => {
-      applySpeed(parseFloat(mark.dataset.value));
-    });
+  // === Import / Export ===
+  importBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      textInput.value = event.target.result;
+      updateStats();
+      showToast(`Importé : ${file.name}`);
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // Permet de réimporter le même fichier
   });
 
-  // Initialisation du slider
-  updateSliderFill();
-  updateActiveMark();
+  exportBtn.addEventListener('click', () => {
+    const text = textInput.value;
+    if (!text.trim()) {
+      showToast('Le texte est vide, rien à exporter');
+      return;
+    }
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const date = new Date().toISOString().split('T')[0];
+    a.download = `recit_${date}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Texte exporté');
+  });
 
-  // === Événements ===
+  // === Plein Écran ===
+  fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        showToast('Plein écran non supporté');
+      });
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) {
+      // Icône "Réduire"
+      fsIcon.innerHTML = '<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>';
+    } else {
+      // Icône "Agrandir"
+      fsIcon.innerHTML = '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
+    }
+  });
+
+  // === Events ===
   playBtn.addEventListener('click', () => {
     if (!isPlaying) startReading();
     else togglePause();
   });
-
   stopBtn.addEventListener('click', stopReading);
-
   voiceBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const gender = btn.dataset.gender;
@@ -965,7 +1051,7 @@
     });
   });
 
-  // === Raccourcis clavier ===
+  // === Raccourcis ===
   document.addEventListener('keydown', (e) => {
     if (e.target === textInput) return;
     if (e.code === 'Space') {
@@ -977,7 +1063,6 @@
     }
   });
 
-  // === Nettoyage ===
   window.addEventListener('beforeunload', () => {
     if (window.speechSynthesis) window.speechSynthesis.cancel();
   });
