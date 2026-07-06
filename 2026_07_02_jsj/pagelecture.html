@@ -46,7 +46,6 @@
     letter-spacing: -0.04em;
   }
   
-  /* --- Bouton Plein Ecran Discret --- */
   .fullscreen-btn {
     position: fixed;
     top: 24px;
@@ -85,6 +84,7 @@
     align-items: center;
     padding: 16px 24px;
     border-bottom: 1px solid rgba(245, 158, 11, 0.1);
+    gap: 16px;
   }
   .editor-title {
     font-size: 0.7rem;
@@ -94,10 +94,29 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap;
+  }
+  .save-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    transition: all 0.3s;
+  }
+  .save-indicator.saving {
+    background: var(--muted);
+    box-shadow: none;
+    animation: pulse-save 1s infinite;
+  }
+  @keyframes pulse-save {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
   }
   .editor-actions {
     display: flex;
     gap: 4px;
+    flex-wrap: wrap;
   }
   .btn-subtle {
     background: transparent;
@@ -170,6 +189,16 @@
     transform: translateY(-2px);
   }
   .btn:active { transform: translateY(0); }
+  .btn-danger {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: rgba(220, 38, 38, 0.4);
+    color: #fca5a5;
+  }
+  .btn-danger:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: var(--fg);
+  }
   .play-btn {
     width: 88px; height: 88px;
     border-radius: 50%;
@@ -426,8 +455,62 @@
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 100;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
+  
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(12, 10, 9, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .modal-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 32px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    transform: scale(0.95);
+    transition: transform 0.3s;
+  }
+  .modal-overlay.show .modal {
+    transform: scale(1);
+  }
+  .modal h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--fg);
+  }
+  .modal p {
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0 0 24px 0;
+    font-size: 0.95rem;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
@@ -465,6 +548,7 @@
     .stats-row { gap: 1.5rem !important; }
     textarea, .reading-display { font-size: 1.125rem; padding: 24px; }
     .speed-value { font-size: 2rem; }
+    .editor-header { padding: 12px 16px; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
@@ -476,7 +560,6 @@
 <div class="glow-orb" style="width: 500px; height: 500px; background: var(--accent); top: -150px; right: -150px;"></div>
 <div class="glow-orb" style="width: 350px; height: 350px; background: var(--danger); bottom: -100px; left: -100px; opacity: 0.18;"></div>
 
-<!-- Bouton Plein Ecran -->
 <button class="fullscreen-btn" id="fullscreenBtn" aria-label="Basculer en plein écran">
   <svg id="fsIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
@@ -515,8 +598,8 @@
   <section class="editor-wrap mb-8">
     <div class="editor-header">
       <div class="editor-title">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-4-6zm-1 7V3.5L18.5 9H13z"/></svg>
-        Éditeur
+        <span class="save-indicator" id="saveIndicator"></span>
+        Sauvegarde automatique
       </div>
       <div class="editor-actions">
         <input type="file" id="fileInput" accept=".txt,.md,text/plain" class="hidden">
@@ -619,6 +702,17 @@
 
 </div>
 
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Remplacer le texte ?</h3>
+    <p id="modalMessage">Le texte actuel sera définitivement remplacé par le contenu du fichier importé. Cette action est irréversible.</p>
+    <div class="modal-actions">
+      <button class="btn-subtle" id="modalCancel" style="border-color: var(--border);">Annuler</button>
+      <button class="btn btn-danger" id="modalConfirm">Remplacer</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -647,6 +741,10 @@
   const fileInput = document.getElementById('fileInput');
   const importBtn = document.getElementById('importBtn');
   const exportBtn = document.getElementById('exportBtn');
+  const saveIndicator = document.getElementById('saveIndicator');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalCancel = document.getElementById('modalCancel');
+  const modalConfirm = document.getElementById('modalConfirm');
 
   // === État ===
   let utterance = null;
@@ -660,8 +758,16 @@
   let readingStartTime = 0;
   let elapsedBeforePause = 0;
   let liveTimerId = null;
+  let pendingFileContent = null;
+  let pendingFileName = null;
+  let currentCharIndex = 0; // Suivi de la position de lecture
 
   const WPM_BASE = 160;
+  const STORAGE_KEYS = {
+    text: 'recit_text',
+    speed: 'recit_speed',
+    gender: 'recit_gender'
+  };
 
   // === Heuristique voix ===
   const femaleHints = ['amelie', 'amélie', 'hortense', 'marie', 'julie', 'virginie', 'audrey', 'céline', 'celine', 'hélène', 'helene', 'alice', 'google français', 'google french', 'fiona', 'samantha', 'victoria', 'karen', 'moira', 'tessa', 'veena', 'léna', 'lena', 'jill', 'paulina', 'yuna', 'amira', 'carla', 'katja'];
@@ -672,6 +778,43 @@
     for (const f of femaleHints) if (n.includes(f)) return 'female';
     for (const m of maleHints) if (n.includes(m)) return 'male';
     return null;
+  }
+
+  // === Sauvegarde Locale ===
+  let saveTimeout = null;
+  function saveData() {
+    saveIndicator.classList.add('saving');
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+      localStorage.setItem(STORAGE_KEYS.text, textInput.value);
+      localStorage.setItem(STORAGE_KEYS.speed, currentSpeed.toString());
+      localStorage.setItem(STORAGE_KEYS.gender, selectedGender);
+      saveIndicator.classList.remove('saving');
+    }, 400);
+  }
+
+  function loadData() {
+    const savedText = localStorage.getItem(STORAGE_KEYS.text);
+    const savedSpeed = localStorage.getItem(STORAGE_KEYS.speed);
+    const savedGender = localStorage.getItem(STORAGE_KEYS.gender);
+
+    if (savedText !== null) {
+      textInput.value = savedText;
+    } else {
+      textInput.value = "Bienvenue dans Récit, votre studio de synthèse vocale. Écrivez ici le texte que vous souhaitez entendre, puis choisissez une voix et ajustez la vitesse. Chaque mot sera mis en lumière au rythme de la narration, comme une partition qui prend vie.";
+    }
+
+    if (savedSpeed) {
+      currentSpeed = parseFloat(savedSpeed);
+      speedSlider.value = currentSpeed;
+    }
+
+    if (savedGender) {
+      selectedGender = savedGender;
+      voiceBtns.forEach(b => {
+        b.classList.toggle('active', b.dataset.gender === selectedGender);
+      });
+    }
   }
 
   // === Visualiseur ===
@@ -775,9 +918,13 @@
     durationAtSpeed.textContent = formatDuration(speedSecs);
   }
 
-  textInput.value = "Bienvenue dans Récit, votre studio de synthèse vocale. Écrivez ici le texte que vous souhaitez entendre, puis choisissez une voix et ajustez la vitesse. Chaque mot sera mis en lumière au rythme de la narration, comme une partition qui prend vie.";
+  // === Initialisation ===
+  loadData();
   updateStats();
-  textInput.addEventListener('input', updateStats);
+  textInput.addEventListener('input', () => {
+    updateStats();
+    saveData();
+  });
 
   // === Toast ===
   let toastTimeout;
@@ -787,6 +934,24 @@
     clearTimeout(toastTimeout);
     toastTimeout = setTimeout(() => toast.classList.remove('show'), 2800);
   }
+
+  // === Modale ===
+  function showModal(title, message, confirmCallback) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').textContent = message;
+    modalOverlay.classList.add('show');
+    
+    const newBtn = modalConfirm.cloneNode(true);
+    modalConfirm.parentNode.replaceChild(newBtn, modalConfirm);
+    newBtn.addEventListener('click', () => {
+      modalOverlay.classList.remove('show');
+      confirmCallback();
+    });
+  }
+  modalCancel.addEventListener('click', () => modalOverlay.classList.remove('show'));
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) modalOverlay.classList.remove('show');
+  });
 
   // === Affichage lecture ===
   function showReadingDisplay(text) {
@@ -873,6 +1038,8 @@
     if (!window.speechSynthesis) { showToast('Synthèse vocale non supportée'); return; }
 
     window.speechSynthesis.cancel();
+    currentCharIndex = 0; // Début du texte
+    
     utterance = new SpeechSynthesisUtterance(text);
     utterance.voice = currentVoice;
     utterance.lang = currentVoice.lang || 'fr-FR';
@@ -908,11 +1075,91 @@
       }
     };
     utterance.onboundary = (e) => {
-      if (e.name === 'word' || !e.name) highlightWord(e.charIndex);
+      if (e.name === 'word' || !e.name) {
+        currentCharIndex = e.charIndex; // Mise à jour de la position
+        highlightWord(e.charIndex);
+      }
     };
 
     setTimeout(() => window.speechSynthesis.speak(utterance), 60);
   }
+
+  // === Relance la lecture à partir d'un index précis (changement de voix/vitesse) ===
+  function restartUtteranceFrom(startIndex, keepPaused = false) {
+    const fullText = textInput.value;
+    if (startIndex < 0 || startIndex >= fullText.length) {
+      if (!keepPaused) startReading();
+      return;
+    }
+
+    const remainingText = fullText.substring(startIndex);
+    if (!remainingText.trim()) {
+      stopReading();
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    utterance = new SpeechSynthesisUtterance(remainingText);
+    utterance.voice = currentVoice;
+    utterance.lang = currentVoice.lang || 'fr-FR';
+    utterance.rate = currentSpeed;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    const offset = startIndex; // Pour mapper l'index local au texte complet
+
+    utterance.onstart = () => {
+      isPlaying = true;
+      isPaused = false; 
+      updatePlayButton();
+      statusDot.classList.add('live');
+      // On ne touche pas au chrono, il continue
+    };
+
+    utterance.onend = () => {
+      isPlaying = false; isPaused = false;
+      updatePlayButton(); statusDot.classList.remove('live');
+      hideReadingDisplay();
+      durationLabel.textContent = 'Durée estimée';
+      stopLiveTimer();
+      durationEl.textContent = formatDuration(getEstimatedSeconds(textInput.value, 1.0));
+    };
+
+    utterance.onerror = (e) => {
+      isPlaying = false; isPaused = false;
+      updatePlayButton(); statusDot.classList.remove('live');
+      hideReadingDisplay();
+      durationLabel.textContent = 'Durée estimée';
+      stopLiveTimer();
+      durationEl.textContent = formatDuration(getEstimatedSeconds(textInput.value, 1.0));
+      if (e.error && e.error !== 'interrupted' && e.error !== 'canceled') {
+        showToast('Erreur de lecture : ' + e.error);
+      }
+    };
+
+    utterance.onboundary = (e) => {
+      if (e.name === 'word' || !e.name) {
+        const realCharIndex = offset + e.charIndex;
+        currentCharIndex = realCharIndex;
+        highlightWord(realCharIndex);
+      }
+    };
+
+    setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+      if (keepPaused) {
+        // Si on était en pause, on relance puis on remet en pause immédiatement
+        setTimeout(() => {
+          window.speechSynthesis.pause();
+          isPaused = true;
+          updatePlayButton();
+          pauseLiveTimer();
+        }, 100);
+      }
+    }, 60);
+  }
+
   function togglePause() {
     if (!isPlaying) return;
     if (!isPaused) {
@@ -955,6 +1202,8 @@
       m.classList.toggle('active', Math.abs(v - currentSpeed) < 0.001);
     });
   }
+  
+  // Mise à jour visuelle seulement pendant le drag
   speedSlider.addEventListener('input', () => {
     currentSpeed = parseFloat(speedSlider.value);
     speedDisplay.innerHTML = currentSpeed.toFixed(2) + '<span style="font-size: 1.2rem; opacity: 0.6;">×</span>';
@@ -963,17 +1212,25 @@
       durationAtSpeed.textContent = formatDuration(getEstimatedSeconds(textInput.value, currentSpeed));
     }
   });
-  function applySpeed(newSpeed, restart = true) {
-    currentSpeed = newSpeed;
-    speedSlider.value = newSpeed;
+  
+  // Applique le changement_audio_ uniquement quand on relâche le curseur (change)
+  speedSlider.addEventListener('change', () => {
+    saveData();
+    if (isPlaying || isPaused) {
+      restartUtteranceFrom(currentCharIndex, isPaused);
+    }
+  });
+  
+  speedMarks.forEach(mark => mark.addEventListener('click', () => {
+    currentSpeed = parseFloat(mark.dataset.value);
+    speedSlider.value = currentSpeed;
     speedDisplay.innerHTML = currentSpeed.toFixed(2) + '<span style="font-size: 1.2rem; opacity: 0.6;">×</span>';
     updateSliderFill(); updateActiveMark(); updateStats();
-    if (restart && (isPlaying || isPaused)) {
-      stopReading();
-      setTimeout(() => startReading(), 120);
+    saveData();
+    if (isPlaying || isPaused) {
+      restartUtteranceFrom(currentCharIndex, isPaused);
     }
-  }
-  speedMarks.forEach(mark => mark.addEventListener('click', () => applySpeed(parseFloat(mark.dataset.value))));
+  }));
   updateSliderFill(); updateActiveMark();
 
   // === Import / Export ===
@@ -983,13 +1240,33 @@
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
-      textInput.value = event.target.result;
-      updateStats();
-      showToast(`Importé : ${file.name}`);
+      pendingFileContent = event.target.result;
+      pendingFileName = file.name;
+      if (textInput.value.trim().length > 0) {
+        showModal(
+          "Remplacer le texte ?",
+          "Le texte actuel sera définitivement remplacé par le contenu du fichier importé. Voulez-vous continuer ?",
+          executeImport
+        );
+      } else {
+        executeImport();
+      }
     };
     reader.readAsText(file);
-    e.target.value = ''; // Permet de réimporter le même fichier
+    e.target.value = '';
   });
+
+  function executeImport() {
+    if (pendingFileContent !== null) {
+      if (isPlaying || isPaused) stopReading();
+      textInput.value = pendingFileContent;
+      updateStats();
+      saveData();
+      showToast(`Importé : ${pendingFileName}`);
+      pendingFileContent = null;
+      pendingFileName = null;
+    }
+  }
 
   exportBtn.addEventListener('click', () => {
     const text = textInput.value;
@@ -1022,20 +1299,20 @@
   });
   document.addEventListener('fullscreenchange', () => {
     if (document.fullscreenElement) {
-      // Icône "Réduire"
       fsIcon.innerHTML = '<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>';
     } else {
-      // Icône "Agrandir"
       fsIcon.innerHTML = '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
     }
   });
 
-  // === Events ===
+  // === Events Globaux ===
   playBtn.addEventListener('click', () => {
     if (!isPlaying) startReading();
     else togglePause();
   });
   stopBtn.addEventListener('click', stopReading);
+  
+  // Changement de voix : relance from current position
   voiceBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const gender = btn.dataset.gender;
@@ -1044,9 +1321,9 @@
       btn.classList.add('active');
       selectedGender = gender;
       pickVoice();
+      saveData();
       if (isPlaying || isPaused) {
-        stopReading();
-        setTimeout(startReading, 150);
+        restartUtteranceFrom(currentCharIndex, isPaused);
       }
     });
   });
@@ -1059,12 +1336,18 @@
       if (!isPlaying) startReading();
       else togglePause();
     } else if (e.code === 'Escape') {
-      stopReading();
+      if (modalOverlay.classList.contains('show')) {
+        modalOverlay.classList.remove('show');
+      } else {
+        stopReading();
+      }
     }
   });
 
+  // Sauvegarde finale
   window.addEventListener('beforeunload', () => {
     if (window.speechSynthesis) window.speechSynthesis.cancel();
+    localStorage.setItem(STORAGE_KEYS.text, textInput.value);
   });
 </script>
 </body>
