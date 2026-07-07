@@ -1299,5 +1299,28 @@ Flux de : droite
             }
         });
     </script>
+    <script>
+    // Fonction pour lire les paramètres de l'URL
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const valeurRecue = urlParams.get('sequenceInput');
+        
+        // Si un paramètre "sequenceInput" a été trouvé dans l'URL
+        if (valeurRecue) {
+            // On cherche le textarea par son ID (ou par son attribut name si c'est ainsi qu'il est défini)
+            let champTexte = document.getElementById('sequenceInput');
+            
+            // Si l'ID n'est pas trouvé, on tente de le chercher par l'attribut "name"
+            if (!champTexte) {
+                champTexte = document.querySelector('textarea[name="sequenceInput"]');
+            }
+            
+            // Si on a bien trouvé le textarea, on y insère la valeur
+            if (champTexte) {
+                champTexte.value = valeurRecue;
+            }
+        }
+    };
+</script>
 </body>
 </html>
