@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page de lancement</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        button {
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0b5ed7;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Ouverture de la page JSJ</h2>
+        <p>Cliquez sur le bouton ci-dessous pour ouvrir la page et y insérer le lien automatiquement.</p>
+        
+        <!-- Le bouton qui déclenche l'action -->
+        <button id="boutonOuvrir">Ouvrir la page et remplir le champ</button>
+    </div>
+
+    <script>
+        // L'URL de la page cible
+        const urlCible = "https://louettechristine.github.io/Website/2026_07_02_jsj/jsj.html";
+        
+        // La valeur à insérer dans le champ "sequenceInput"
+        const valeurAInserer = "https://louettechristine.github.io/Website/2026_07_02_jsj/jsj.html";
+
+        // Action lors du clic
+        document.getElementById("boutonOuvrir").addEventListener("click", function() {
+            // On construit l'URL avec le paramètre pour envoyer la valeur à l'autre page
+            const urlComplete = urlCible + "?sequenceInput=" + encodeURIComponent(valeurAInserer);
+            
+            // On ouvre dans un nouvel onglet
+            window.open(urlComplete, "_blank");
+        });
+    </script>
+
+</body>
+</html>
