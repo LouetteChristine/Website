@@ -1299,58 +1299,5 @@ Flux de : droite
             }
         });
     </script>
-    <script>
-    // Fonction pour lire les paramètres de l'URL
-    window.onload = function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const valeurRecue = urlParams.get('sequenceInput');
-        
-        // Si un paramètre "sequenceInput" a été trouvé dans l'URL
-        if (valeurRecue) {
-            // On cherche le textarea par son ID (ou par son attribut name si c'est ainsi qu'il est défini)
-            let champTexte = document.getElementById('sequenceInput');
-            
-            // Si l'ID n'est pas trouvé, on tente de le chercher par l'attribut "name"
-            if (!champTexte) {
-                champTexte = document.querySelector('textarea[name="sequenceInput"]');
-            }
-            
-            // Si on a bien trouvé le textarea, on y insère la valeur
-            if (champTexte) {
-                champTexte.value = valeurRecue;
-            }
-        }
-    };
-</script>
-    <script>
-    // Fonction pour récupérer un cookie par son nom
-    function getCookie(nom) {
-        let nomEQ = nom + "=";
-        let ca = document.cookie.split(';');
-        for(let i = 0; i < ca.length; i++) {
-            let c = ca[i];
-            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-            if (c.indexOf(nomEQ) === 0) return decodeURIComponent(c.substring(nomEQ.length, c.length));
-        }
-        return null;
-    }
-
-    window.onload = function() {
-        // On essaie de lire le cookie nommé "valeurSequence"
-        const valeurRecue = getCookie("valeurSequence");
-        
-        if (valeurRecue) {
-            // On cherche le champ "sequenceInput"
-            let champTexte = document.getElementById('sequenceInput') || document.querySelector('textarea[name="sequenceInput"]');
-            
-            if (champTexte) {
-                champTexte.value = valeurRecue;
-            }
-            
-            // On supprime le cookie après utilisation pour ne pas qu'il s'insère à chaque fois
-            document.cookie = "valeurSequence=; path=/; max-age=0";
-        }
-    };
-</script>
 </body>
 </html>
