@@ -554,6 +554,9 @@ Flux de : droite
         let enableTTS = false;
         let previousStep = null;
         let availableVoices = [];
+        
+        // Variable pour sauvegarder le temps écoulé lors de la pause
+        let savedElapsed = 0;
 
         // Éléments DOM
         const gaucheText = document.getElementById('gaucheText');
@@ -751,6 +754,12 @@ Flux de : droite
             return !/\d/.test(step.gauche) && !/\d/.test(step.droite);
         }
 
+        // NOUVELLE FONCTION : Vérifie si la valeur numérique de la chaîne est 0
+        function isValueZero(val) {
+            const match = val.match(/\d+/);
+            return match ? parseInt(match[0], 10) === 0 : false;
+        }
+
         // FONCTION pour calculer exactement ce qui doit être dit
         function getVoiceTexts(oldStep, newStep) {
             let textsToSpeak = [];
@@ -773,11 +782,11 @@ Flux de : droite
                 return textsToSpeak;
             }
 
-            // SINON : on prononce toutes les zones rouges (celles qui ont changé)
-            if (leftChanged) {
+            // SINON : on prononce toutes les zones rouges (celles qui ont changé) SAUF si la valeur est 0
+            if (leftChanged && !isValueZero(newStep.gauche)) {
                 textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
             }
-            if (rightChanged) {
+            if (rightChanged && !isValueZero(newStep.droite)) {
                 textsToSpeak.push("Main droite, " + formatSpokenValue(newStep.droite));
             }
 
@@ -838,6 +847,7 @@ Flux de : droite
             }
             sequence = [];
             previousStep = null;
+            savedElapsed = 0; // Reset du temps sauvegardé
             setButtonStates('stopped');
             stepCounter.textContent = '0';
             countdownVal.textContent = formatTime(getIntervalSeconds() || 0);
@@ -1128,6 +1138,7 @@ Flux de : droite
             totalCounter.textContent = sequence.length;
             currentIndex = 0; // On recommence à zéro
             previousStep = null; 
+            savedElapsed = 0; // Reset du temps sauvegardé quand on démarre
             
             // Initialiser la durée en fonction de la première étape
             if (isTextOnlyStep(sequence[currentIndex])) {
@@ -1149,6 +1160,9 @@ Flux de : droite
 
         function pauseAnimation() {
             if (intervalId) {
+                // Sauvegarder le temps écoulé AVANT de arrêter le tick
+                savedElapsed = (Date.now() - lastUpdateTime) / 1000;
+                
                 clearInterval(intervalId);
                 intervalId = null;
                 setButtonStates('paused');
@@ -1169,7 +1183,10 @@ Flux de : droite
                     alert("Veuillez entrer un temps valide (supérieur à 0).");
                     return;
                 }
-                lastUpdateTime = Date.now();
+                
+                // Reprendre exactement là où on s'était arrêté
+                lastUpdateTime = Date.now() - (savedElapsed * 1000);
+                
                 intervalId = setInterval(tick, tickRate);
                 setButtonStates('playing');
             }
@@ -1189,6 +1206,7 @@ Flux de : droite
             initAudio();
             if (enableClick) playClickClick(); 
             currentIndex = (currentIndex - 1 + sequence.length) % sequence.length;
+            savedElapsed = 0; // Quand on change d'étape manuellement, on reset le timer de l'étape
             updateDisplay(); 
             lastUpdateTime = Date.now();
             if (intervalId) {
@@ -1202,6 +1220,7 @@ Flux de : droite
             initAudio();
             if (enableClick) playClickClick(); 
             currentIndex = (currentIndex + 1) % sequence.length;
+            savedElapsed = 0; // Quand on change d'étape manuellement, on reset le timer de l'étape
             updateDisplay(); 
             lastUpdateTime = Date.now();
             if (intervalId) {
