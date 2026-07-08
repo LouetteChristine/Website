@@ -97,15 +97,16 @@
                 <i class="fa-solid fa-pen-nib text-accent text-xs"></i>
                 Texte à lire
             </label>
-            <div class="relative min-h-[16rem]">
+            <!-- Conteneur avec position relative pour superposer la vue lecture -->
+            <div class="relative">
                 <textarea
                     id="text-input"
-                    rows="10"
-                    class="w-full h-full p-4 bg-white border-2 border-gray-200 rounded-xl text-gray-800 text-base leading-relaxed resize-y focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200 placeholder:text-gray-300"
+                    rows="7"
+                    class="w-full p-4 bg-white border-2 border-gray-200 rounded-xl text-gray-800 text-base leading-relaxed resize-none focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200 placeholder:text-gray-300"
                     placeholder="Saisissez ou collez votre texte ici..."
                 ></textarea>
-                <!-- Vue de lecture (cachée par défaut) -->
-                <div id="reading-view" class="hidden w-full h-full p-4 bg-white border-2 border-accent rounded-xl text-gray-800 focus:outline-none transition-all duration-200"></div>
+                <!-- Vue de lecture superposée (cachée par défaut) -->
+                <div id="reading-view" class="hidden absolute inset-0 p-4 bg-white border-2 border-accent rounded-xl text-gray-800 focus:outline-none transition-all duration-200"></div>
                 
                 <!-- Indicateur live -->
                 <div id="live-badge" class="hidden absolute top-3 right-3 flex items-center gap-1.5 bg-accent/10 text-accent text-xs font-bold px-2.5 py-1 rounded-full z-10">
@@ -316,10 +317,9 @@
             }
 
             if (french.length === 0 && voices.length > 0) {
-                // Fallback si aucune voix fr-FR n'est trouvée sur le système
                 const opt = document.createElement('option');
                 opt.disabled = true;
-                opt.textContent = 'Aucune voix fr-FR trouvée (affichage de toutes les voix)';
+                opt.textContent = 'Aucune voix fr-FR trouvée';
                 voiceSelect.appendChild(opt);
                 
                 voices.forEach(voice => {
@@ -372,7 +372,7 @@
             charOffset  = currentCharIndex;
 
             // Prépare et affiche la vue avec surbrillance si on arrive de l'éditeur
-            if (!textInput.classList.contains('hidden')) {
+            if (textInput.classList.contains('hidden') === false) {
                 prepareReadingView(text);
                 toggleEditMode(false);
             } else {
@@ -399,7 +399,7 @@
                     const curr = readingView.querySelector(`span[data-start="${absoluteCharIndex}"]`);
                     if (curr) {
                         curr.classList.add('reading-highlight');
-                        // Scroller automatiquement vers le mot lu
+                        // Scroller automatiquement vers le mot lu dans la vue fixe de 7 lignes
                         curr.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                     currentCharIndex = absoluteCharIndex;
