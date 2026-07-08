@@ -20,10 +20,63 @@
     <style>
         * { font-family: 'Outfit', sans-serif; }
 
-        textarea::-webkit-scrollbar, #reading-view::-webkit-scrollbar { width: 6px; }
-        textarea::-webkit-scrollbar-track, #reading-view::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
-        textarea::-webkit-scrollbar-thumb, #reading-view::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        textarea::-webkit-scrollbar-thumb:hover, #reading-view::-webkit-scrollbar-thumb:hover { background: #94a3b8'; }
+        /* Styles synchronisés pour la textarea et le backdrop */
+        #text-input, #backdrop {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            line-height: 1.625;
+            padding: 1rem;
+            border: none;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            letter-spacing: 0;
+            width: 100%;
+            border-radius: 10px; /* Correspond à rounded-xl moins l'épaisseur de la bordure du conteneur */
+        }
+
+        #text-input {
+            background: transparent;
+            color: #1f2937; /* gray-800 */
+            resize: none;
+            position: relative;
+            z-index: 10;
+            outline: none;
+            display: block;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+        }
+
+        #backdrop {
+            background: transparent;
+            color: transparent;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 20;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: transparent transparent; /* Invisible mais prend la même place */
+        }
+
+        /* Synchronisation des scrollbars Chrome/Safari */
+        #text-input::-webkit-scrollbar { width: 6px; }
+        #text-input::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+        #text-input::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+        #backdrop::-webkit-scrollbar { width: 6px; }
+        #backdrop::-webkit-scrollbar-track { background: transparent; }
+        #backdrop::-webkit-scrollbar-thumb { background: transparent; }
+
+        /* Surbrillance du texte lu */
+        .highlight-word {
+            background-color: #059669;
+            color: #ffffff;
+            border-radius: 3px;
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
+        }
 
         input[type="range"] { -webkit-appearance: none; appearance: none; height: 6px; background: #e2e8f0; border-radius: 3px; outline: none; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; background: #059669; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 8px rgba(5,150,105,0.35); transition: transform 0.15s ease; }
@@ -52,10 +105,6 @@
         .btn-ctrl:hover { transform: translateY(-1px); }
         .btn-ctrl:active { transform: translateY(0); }
 
-        /* Surbrillance du texte lu */
-        .word { transition: background-color 0.15s ease, color 0.15s ease; border-radius: 3px; padding: 1px 0; }
-        .reading-highlight { background-color: #059669; color: #ffffff; }
-
         body::before { content: ''; position: fixed; inset: 0; background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.03) 1px, transparent 0); background-size: 28px 28px; pointer-events: none; z-index: 0; }
 
         .custom-select {
@@ -82,27 +131,24 @@
             <p class="text-gray-400 text-sm mt-2 font-medium">Synthese vocale avec surbrillance</p>
         </header>
 
-        <!-- Zone de texte / Lecture -->
+        <!-- Zone de texte Modifiable avec Surbrillance -->
         <section class="fade-up fd2 mb-5">
             <label for="text-input" class="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
                 <i class="fa-solid fa-pen-nib text-accent text-xs"></i>
                 Texte à lire
             </label>
-            <!-- Conteneur avec position relative -->
-            <div class="relative">
-                <!-- Textarea : conserve sa taille de 7 lignes même en mode invisible pour fixer la hauteur -->
+            <!-- Conteneur gérant la bordure et le focus -->
+            <div id="text-container" class="relative border-2 border-gray-200 rounded-xl bg-white transition-all duration-200 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20">
                 <textarea
                     id="text-input"
                     rows="7"
-                    class="w-full p-4 bg-white border-2 border-gray-200 rounded-xl text-gray-800 text-base leading-relaxed resize-none focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200 placeholder:text-gray-300"
                     placeholder="Saisissez ou collez votre texte ici..."
                 ></textarea>
-                
-                <!-- Vue de lecture superposée (cachée par défaut) - Même padding et typo pour alignement parfait -->
-                <div id="reading-view" class="hidden absolute inset-0 p-4 bg-white border-2 border-accent rounded-xl text-gray-800 text-base leading-relaxed overflow-y-auto transition-all duration-200 pointer-events-auto"></div>
+                <!-- Calque de surbrillance superposé -->
+                <div id="backdrop" aria-hidden="true"></div>
                 
                 <!-- Indicateur live -->
-                <div id="live-badge" class="hidden absolute top-3 right-3 flex items-center gap-1.5 bg-accent/10 text-accent text-xs font-bold px-2.5 py-1 rounded-full z-10">
+                <div id="live-badge" class="hidden absolute top-3 right-3 flex items-center gap-1.5 bg-accent/10 text-accent text-xs font-bold px-2.5 py-1 rounded-full z-30">
                     <span class="live-dot w-1.5 h-1.5 rounded-full bg-accent inline-block"></span>
                     Lecture
                 </div>
@@ -203,7 +249,7 @@
     <script>
         // === Références DOM ===
         const textInput     = document.getElementById('text-input');
-        const readingView   = document.getElementById('reading-view');
+        const backdrop      = document.getElementById('backdrop');
         const wordCountEl   = document.getElementById('word-count');
         const charCountEl   = document.getElementById('char-count');
         const progressBar   = document.getElementById('progress-bar');
@@ -237,6 +283,24 @@
         let updateTimer       = null;
         let keepAliveTimer    = null;
 
+        // === Synchronisation du scroll entre Textarea et Backdrop ===
+        let isSyncingA = false;
+        let isSyncingB = false;
+
+        textInput.addEventListener('scroll', () => {
+            if (isSyncingB) return;
+            isSyncingA = true;
+            backdrop.scrollTop = textInput.scrollTop;
+            isSyncingA = false;
+        });
+
+        backdrop.addEventListener('scroll', () => {
+            if (isSyncingA) return;
+            isSyncingB = true;
+            textInput.scrollTop = backdrop.scrollTop;
+            isSyncingB = false;
+        });
+
         // === Utilitaires ===
         function countWords(text) { return text.trim() ? text.trim().split(/\s+/).length : 0; }
         function estimateTime(text, rate) { const words = countWords(text); const wpm = 180 * Math.max(0.1, rate); return (words / wpm) * 60; }
@@ -253,35 +317,33 @@
             setTimeout(() => { el.classList.replace('toast-in', 'toast-out'); setTimeout(() => el.remove(), 300); }, 2800);
         }
 
-        // === Bascule Édition / Lecture ===
-        function toggleEditMode(isEdit) {
-            if (isEdit) {
-                // Mode saisie : la textarea est visible et interactive
-                textInput.classList.remove('invisible', 'pointer-events-none');
-                readingView.classList.add('hidden');
-            } else {
-                // Mode lecture : on rend la textarea invisible mais elle garde sa place (7 lignes)
-                // La div reading-view prend exactement la même place par-dessus
-                textInput.classList.add('invisible', 'pointer-events-none');
-                readingView.classList.remove('hidden');
-            }
+        /** Échapper les caractères HTML pour la surbrillance */
+        function escapeHtml(text) {
+            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
-        /** Prépare la vue de lecture avec des spans pour chaque mot */
-        function prepareReadingView(text) {
-            const parts = text.split(/(\s+)/);
-            let html = '';
-            let charPos = 0;
-            for (const part of parts) {
-                if (part.length === 0) continue;
-                if (/\s/.test(part)) {
-                    html += part;
-                } else {
-                    html += `<span class="word" data-start="${charPos}">${part}</span>`;
-                }
-                charPos += part.length;
+        /** Met à jour le calque de surbrillance (backdrop) */
+        function updateBackdrop(text, start = -1, end = -1) {
+            if (start < 0 || start >= text.length) {
+                backdrop.innerHTML = escapeHtml(text);
+                return;
             }
-            readingView.innerHTML = html;
+            const before = text.substring(0, start);
+            const word = text.substring(start, end);
+            const after = text.substring(end);
+            
+            backdrop.innerHTML = escapeHtml(before) + 
+                                 `<span class="highlight-word">${escapeHtml(word)}</span>` + 
+                                 escapeHtml(after);
+        }
+
+        /** Trouve la fin d'un mot à partir de son index de départ */
+        function getWordEnd(text, start) {
+            let end = start;
+            while (end < text.length && !/\s/.test(text[end])) {
+                end++;
+            }
+            return end;
         }
 
         // === Compteurs texte ===
@@ -349,8 +411,8 @@
 
         // === Lecture ===
         function startReading(fromBeginning = true) {
-            const text = textInput.value.trim();
-            if (!text) { showToast('Veuillez saisir du texte a lire.', 'error'); return; }
+            const text = textInput.value;
+            if (!text.trim()) { showToast('Veuillez saisir du texte a lire.', 'error'); return; }
 
             synth.cancel();
             stopTimers();
@@ -363,35 +425,26 @@
             totalChars  = text.length;
             charOffset  = currentCharIndex;
 
-            // Prépare la vue lecture si on n'est pas déjà en mode lecture
-            if (readingView.classList.contains('hidden')) {
-                prepareReadingView(text);
-                toggleEditMode(false);
-            } else {
-                const prev = readingView.querySelector('.reading-highlight');
-                if (prev) prev.classList.remove('reading-highlight');
-            }
-
             currentUtterance = new SpeechSynthesisUtterance(textToRead);
             currentUtterance.rate = currentRate;
             currentUtterance.lang = 'fr-FR';
             if (selectedVoice) currentUtterance.voice = selectedVoice;
 
+            // Surbrillance dynamique via l'événement boundary
             currentUtterance.onboundary = (e) => {
                 if (e.name === 'word') {
                     const absoluteCharIndex = charOffset + e.charIndex;
-                    
-                    const prev = readingView.querySelector('.reading-highlight');
-                    if (prev) prev.classList.remove('reading-highlight');
-
-                    const curr = readingView.querySelector(`span[data-start="${absoluteCharIndex}"]`);
-                    if (curr) {
-                        curr.classList.add('reading-highlight');
-                        // Scroller uniquement à l'intérieur de la vue de lecture (qui fait 7 lignes)
-                        curr.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
+                    const wordEnd = getWordEnd(text, absoluteCharIndex);
+                    updateBackdrop(text, absoluteCharIndex, wordEnd);
                     currentCharIndex = absoluteCharIndex;
                     updateProgress();
+                    
+                    // Auto-scroll vers le mot en cours de lecture
+                    const highlightEl = backdrop.querySelector('.highlight-word');
+                    if (highlightEl) {
+                        highlightEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // La synchronisation du scroll se fera via l'event listener
+                    }
                 }
             };
 
@@ -433,7 +486,7 @@
             currentCharIndex = 0;
             currentUtterance = null;
             stopTimers();
-            toggleEditMode(true); // Retour à la textarea
+            updateBackdrop(textInput.value); // Efface la surbrillance
             updateUI();
             updateProgress();
         }
@@ -499,6 +552,7 @@
         textInput.addEventListener('input', () => {
             updateCounts();
             if (isReading) { stopReading(); showToast('Texte modifie, lecture arretee.', 'info'); }
+            updateBackdrop(textInput.value); // Met à jour le calque de texte
         });
 
         btnStart.addEventListener('click', () => startReading(true));
@@ -529,7 +583,7 @@
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (ev) => { textInput.value = ev.target.result; updateCounts(); if (isReading) stopReading(); showToast(`Texte importe : ${file.name}`, 'success'); };
+            reader.onload = (ev) => { textInput.value = ev.target.result; updateCounts(); if (isReading) stopReading(); updateBackdrop(textInput.value); showToast(`Texte importe : ${file.name}`, 'success'); };
             reader.onerror = () => showToast('Erreur lors de l\'import du fichier.', 'error');
             reader.readAsText(file);
             fileInput.value = '';
@@ -556,6 +610,7 @@
                 if (p.text) textInput.value = p.text;
                 if (p.rate) { currentRate = parseFloat(p.rate); speedRange.value = currentRate; speedValue.textContent = `${currentRate.toFixed(1)}x`; }
                 updateCounts();
+                updateBackdrop(textInput.value); // Initialiser le calque
             } catch(e) {}
         }
 
@@ -569,7 +624,7 @@
         }
 
         document.addEventListener('keydown', (e) => {
-            if (e.target === textInput) return;
+            if (e.target === textInput) return; // Ne pas intercepter si l'utilisateur tape dans la zone
             if (e.code === 'Space') { e.preventDefault(); if (isReading) togglePause(); else startReading(true); }
             if (e.code === 'Escape' && isReading) { e.preventDefault(); stopReading(); }
         });
