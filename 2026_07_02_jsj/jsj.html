@@ -721,7 +721,12 @@
             const currentSpeed = parseFloat(speedInput.value) || 0.8; // Récupérer la vitesse choisie
 
             texts.forEach(t => {
-                const utterance = new SpeechSynthesisUtterance(t);
+                // Règle : Ne jamais prononcer "+"
+                // On remplace tous les + par du vide, et on nettoie les multiples espaces qui peuvent en résulter
+                const cleanedT = t.replace(/\+/g, '').replace(/\s+/g, ' ').trim();
+                if (!cleanedT) return; // Ne pas lire si le texte est vide après nettoyage
+
+                const utterance = new SpeechSynthesisUtterance(cleanedT);
                 if (selectedVoice) {
                     utterance.voice = selectedVoice;
                     utterance.lang = selectedVoice.lang;
@@ -776,10 +781,16 @@
             return !/\d/.test(step.gauche) && !/\d/.test(step.droite);
         }
 
-        // NOUVELLE FONCTION : Vérifie si la valeur numérique de la chaîne est 0
+        // Vérifie si la valeur numérique de la chaîne est 0
         function isValueZero(val) {
             const match = val.match(/\d+/);
             return match ? parseInt(match[0], 10) === 0 : false;
+        }
+
+        // NOUVELLE FONCTION : Vérifie si la valeur numérique de la chaîne est 100
+        function isValueOneHundred(val) {
+            const match = val.match(/\d+/);
+            return match ? parseInt(match[0], 10) === 100 : false;
         }
 
         // FONCTION pour calculer exactement ce qui doit être dit
@@ -799,10 +810,11 @@
                     if (!leftChanged && !rightChanged) {
                         leftChanged = true; rightChanged = true; // Forcer la lecture si pas de changement
                     }
-                    if (leftChanged && !isValueZero(newStep.gauche)) {
+                    // Règle ajoutée : ne pas prononcer si la valeur est 100
+                    if (leftChanged && !isValueZero(newStep.gauche) && !isValueOneHundred(newStep.gauche)) {
                         textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
                     }
-                    if (rightChanged && !isValueZero(newStep.droite)) {
+                    if (rightChanged && !isValueZero(newStep.droite) && !isValueOneHundred(newStep.droite)) {
                         textsToSpeak.push("Main droite, " + formatSpokenValue(newStep.droite));
                     }
                 }
@@ -820,14 +832,14 @@
             // "Supprime la règle pour les deux zones rouges qui ne contiennent pas de chiffre."
             // Si aucune des deux zones n'a de chiffre et qu'il n'y a pas de préfixe, on ne lit plus rien.
             if (!leftHasDigit && !rightHasDigit) {
-                return textsToSpeak; // RÈGLE SUPPRIMÉE ICI
+                return textsToSpeak; 
             }
 
-            // SINON : on prononce toutes les zones rouges (celles qui ont changé) SAUF si la valeur est 0
-            if (leftChanged && leftHasDigit && !isValueZero(newStep.gauche)) {
+            // SINON : on prononce toutes les zones rouges (celles qui ont changé) SAUF si la valeur est 0 ou 100
+            if (leftChanged && leftHasDigit && !isValueZero(newStep.gauche) && !isValueOneHundred(newStep.gauche)) {
                 textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
             }
-            if (rightChanged && rightHasDigit && !isValueZero(newStep.droite)) {
+            if (rightChanged && rightHasDigit && !isValueZero(newStep.droite) && !isValueOneHundred(newStep.droite)) {
                 textsToSpeak.push("Main droite, " + formatSpokenValue(newStep.droite));
             }
 
@@ -1020,9 +1032,9 @@
                 } else if (isTextOnlyStep(step)) {
                     // Règle supprimée : on ne lit plus les zones sans chiffre sans préfixe
                 } else {
-                    // Première étape avec des chiffres, on la lit
-                    if (/\d/.test(step.gauche) && !isValueZero(step.gauche)) textsToSpeak.push("Main gauche, " + formatSpokenValue(step.gauche));
-                    if (/\d/.test(step.droite) && !isValueZero(step.droite)) textsToSpeak.push("Main droite, " + formatSpokenValue(step.droite));
+                    // Première étape avec des chiffres, on la lit (sauf si 0 ou 100)
+                    if (/\d/.test(step.gauche) && !isValueZero(step.gauche) && !isValueOneHundred(step.gauche)) textsToSpeak.push("Main gauche, " + formatSpokenValue(step.gauche));
+                    if (/\d/.test(step.droite) && !isValueZero(step.droite) && !isValueOneHundred(step.droite)) textsToSpeak.push("Main droite, " + formatSpokenValue(step.droite));
                 }
 
                 if (textsToSpeak.length > 0) {
