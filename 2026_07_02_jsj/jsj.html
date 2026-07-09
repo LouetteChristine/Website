@@ -15,6 +15,8 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            -webkit-text-size-adjust: 100%; /* Empêche la réduction automatique de la police sur mobile */
+            text-size-adjust: 100%;
         }
 
         /* --- Bouton flottant pour quitter le plein écran --- */
@@ -120,6 +122,30 @@
             body.fullscreen-active .hand-next { 
                 font-size: 2rem; 
             }
+            
+            /* Règles générales pour mobile (hors plein écran) */
+            .display-area {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .hand-box {
+                width: 100%;
+                padding: 20px 10px;
+            }
+            .hand-value {
+                font-size: 3.5rem; /* Taille adaptée pour mobile */
+            }
+            .hand-next {
+                font-size: 1.5rem; /* Taille adaptée pour mobile */
+            }
+            
+            .file-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .btn-group {
+                justify-content: center;
+            }
             .input-row {
                 flex-direction: column;
                 align-items: stretch;
@@ -162,7 +188,14 @@
 
         .file-controls {
             display: flex;
-            gap: 10px;
+            gap: 25px; /* Espace plus grand entre les deux groupes */
+            align-items: center;
+            flex-wrap: wrap; /* Permet le retour à la ligne sur mobile */
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px; /* Espace standard à l'intérieur du groupe */
             align-items: center;
         }
 
@@ -313,6 +346,7 @@
             font-size: 4rem;
             font-weight: bold;
             color: #0056b3;
+            -webkit-text-size-adjust: 100%; /* Sécurité anti-réduction mobile */
         }
 
         .hand-next {
@@ -322,6 +356,7 @@
             margin-top: 15px;
             min-height: 2.5rem;
             transition: color 0.3s;
+            -webkit-text-size-adjust: 100%; /* Sécurité anti-réduction mobile */
         }
 
         .hand-next.changed {
@@ -437,11 +472,18 @@
     <div class="controls">
         
         <div class="file-controls">
-            <button type="button" id="raccourcisBtn">Raccourcis</button>
-            <button type="button" id="localisationBtn">Localisation</button>
-            <label for="fileInput" class="import-btn">Importer</label>
-            <input type="file" id="fileInput" accept=".txt">
-            <button type="button" id="exportBtn">Exporter</button>
+            <!-- Groupe 1 : Navigation -->
+            <div class="btn-group">
+                <button type="button" id="raccourcisBtn">Raccourcis</button>
+                <button type="button" id="localisationBtn">Localisation</button>
+            </div>
+            
+            <!-- Groupe 2 : Fichiers -->
+            <div class="btn-group">
+                <label for="fileInput" class="import-btn">Importer</label>
+                <input type="file" id="fileInput" accept=".txt">
+                <button type="button" id="exportBtn">Exporter</button>
+            </div>
         </div>
 
         <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">Le foie:
@@ -697,7 +739,6 @@ Flux de : droite
         speedInput.addEventListener('input', saveSettings);
         volumeInput.addEventListener('input', saveSettings);
 
-        // clearQueue permet de ne pas couper la voix en cours, mais de mettre la nouvelle dans la file d'attente
         function speakTexts(texts, clearQueue = true) {
             if (!window.speechSynthesis || !enableTTS) return;
             if (clearQueue) window.speechSynthesis.cancel(); 
@@ -759,7 +800,6 @@ Flux de : droite
             let textsToSpeak = [];
             if (!newStep) return textsToSpeak;
 
-            // S'il n'y a pas d'ancienne étape (première étape lancée)
             if (!oldStep) {
                 let leftHasDigitOrDot = /(\d|\.)/.test(newStep.gauche);
                 let rightHasDigitOrDot = /(\d|\.)/.test(newStep.droite);
@@ -981,7 +1021,6 @@ Flux de : droite
             const step = sequence[currentIndex];
             
             if (isTextOnlyStep(step)) {
-                // Les étapes textuelles sont toujours lues à l'affichage (elles ne sont pas lues en avance par le warning)
                 if (enableTTS) {
                     let textToRead = `${step.gauche.trim()} ${step.droite.trim()}`.replace(/\s+/g, ' ').trim();
                     if(textToRead) speakTexts([textToRead], true);
@@ -1046,7 +1085,6 @@ Flux de : droite
 
             const warningTime = intervalTime > 5 ? 5.0 : Math.max(0.5, intervalTime / 2);
 
-            // Annonce anticipée (Warning)
             if (remaining <= warningTime && remaining > 0 && !clickWarningPlayed) {
                 if (enableClick) playClickClick();
                 clickWarningPlayed = true;
@@ -1058,27 +1096,21 @@ Flux de : droite
                     if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
                         // Fin de la séquence
                     } else {
-                        // On n'annonce pas les étapes textuelles à l'avance pour éviter de les couper
                         if (!isTextOnlyStep(nextStep)) {
                             let textsToSpeak = getVoiceTexts(currentStep, nextStep);
                             if (textsToSpeak.length > 0) {
-                                // clearQueue = false : on met dans la file d'attente pour ne pas couper la voix actuelle !
-                                speakTexts(textsToSpeak, false); 
+                                speakTexts(textsToSpeak, false); // clearQueue = false
                             }
                         }
                     }
                 }
             }
 
-            // Fin du timer
             if (elapsed >= intervalTime) {
-                // ATTENTE DE LA FIN DE LECTURE VOCALE
                 if (window.speechSynthesis && window.speechSynthesis.speaking) {
-                    // Sécurité : si la voix parle depuis plus de 15 secondes après la fin du timer, on force l'avance (anti-blocage navigateur)
                     if (elapsed - intervalTime > 15) {
                         window.speechSynthesis.cancel();
                     } else {
-                        // On maintient le timer en attente
                         lastUpdateTime = Date.now() - (intervalTime * 1000);
                         return;
                     }
@@ -1093,7 +1125,6 @@ Flux de : droite
                 }
 
                 currentIndex = (currentIndex + 1) % sequence.length;
-                // shouldSpeak = false car l'étape a déjà été annoncée par le warning (ou sera annoncée si text-only)
                 updateDisplay(false); 
                 lastUpdateTime = Date.now();
             }
@@ -1182,7 +1213,6 @@ Flux de : droite
                 return;
             }
             
-            // On lance la première étape en activant la voix (shouldSpeak = true)
             updateDisplay(true); 
             lastUpdateTime = Date.now();
             intervalId = setInterval(tick, tickRate);
@@ -1197,7 +1227,6 @@ Flux de : droite
                 intervalId = null;
                 setButtonStates('paused');
                 
-                // On coupe la voix si on met en pause pour ne pas être bloqué en attendant la fin d'une voix longue
                 if (window.speechSynthesis && window.speechSynthesis.speaking) {
                     window.speechSynthesis.cancel();
                 }
@@ -1220,7 +1249,6 @@ Flux de : droite
                 
                 lastUpdateTime = Date.now() - (savedElapsed * 1000);
                 
-                // On ré-autorise l'annonce du warning au cas où on revient de pause
                 clickWarningPlayed = false; 
                 
                 intervalId = setInterval(tick, tickRate);
@@ -1240,7 +1268,7 @@ Flux de : droite
             if (sequence.length === 0) return;
             initAudio();
             if (enableClick) playClickClick();
-            if (window.speechSynthesis) window.speechSynthesis.cancel(); // Coupe la file d'attente vocale
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
             
             currentIndex = (currentIndex - 1 + sequence.length) % sequence.length;
             savedElapsed = 0; 
@@ -1256,7 +1284,7 @@ Flux de : droite
             if (sequence.length === 0) return;
             initAudio();
             if (enableClick) playClickClick();
-            if (window.speechSynthesis) window.speechSynthesis.cancel(); // Coupe la file d'attente vocale
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
             
             currentIndex = (currentIndex + 1) % sequence.length;
             savedElapsed = 0; 
