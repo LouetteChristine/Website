@@ -610,8 +610,6 @@ Flux de : droite
             for (let line of lines) {
                 let trimmedLine = line.trim();
                 if (trimmedLine === '') continue; 
-                
-                // Ignorer les lignes commençant par *
                 if (trimmedLine.startsWith('*')) continue;
                 
                 const parts = line.split(':');
@@ -656,7 +654,7 @@ Flux de : droite
         });
 
         // ==========================================
-        // GESTION DES VOIX TTS
+        // GESTION DES VOIX TTS (AVEC FILE D'ATTENTE)
         // ==========================================
         function loadVoices() {
             if (!window.speechSynthesis) return;
@@ -699,9 +697,10 @@ Flux de : droite
         speedInput.addEventListener('input', saveSettings);
         volumeInput.addEventListener('input', saveSettings);
 
-        function speakTexts(texts) {
+        // clearQueue permet de ne pas couper la voix en cours, mais de mettre la nouvelle dans la file d'attente
+        function speakTexts(texts, clearQueue = true) {
             if (!window.speechSynthesis || !enableTTS) return;
-            window.speechSynthesis.cancel(); 
+            if (clearQueue) window.speechSynthesis.cancel(); 
             
             const selectedVoiceIndex = voiceSelect.value;
             const selectedVoice = availableVoices[selectedVoiceIndex];
@@ -731,18 +730,11 @@ Flux de : droite
 
             if (match) {
                 const num = parseInt(match[0], 10);
-                
-                if ([1, 16, 9, 19, 21].includes(num)) {
-                    fingerName = "Pouce";
-                } else if ([5, 6, 10, 11, 22].includes(num)) {
-                    fingerName = "Index";
-                } else if ([6, 25, 3, 12, 13].includes(num)) { 
-                    fingerName = "Majeur";
-                } else if ([7, 2, 17, 4, 14].includes(num)) {
-                    fingerName = "Annulaire";
-                } else if ([24, 23, 18, 20, 15].includes(num)) {
-                    fingerName = "Auriculaire";
-                }
+                if ([1, 16, 9, 19, 21].includes(num)) fingerName = "Pouce";
+                else if ([5, 6, 10, 11, 22].includes(num)) fingerName = "Index";
+                else if ([6, 25, 3, 12, 13].includes(num)) fingerName = "Majeur";
+                else if ([7, 2, 17, 4, 14].includes(num)) fingerName = "Annulaire";
+                else if ([24, 23, 18, 20, 15].includes(num)) fingerName = "Auriculaire";
             }
 
             cleanedVal = cleanedVal.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit');
@@ -754,21 +746,33 @@ Flux de : droite
             }
         }
 
-        // Vérifie si une étape ne contient aucun chiffre NI point "." 
         function isTextOnlyStep(step) {
             if (!step) return false;
             let gClean = step.gauche.trim();
             let dClean = step.droite.trim();
-            
             let leftHasDigitOrDot = /(\d|\.)/.test(gClean);
             let rightHasDigitOrDot = /(\d|\.)/.test(dClean);
-            
             return !leftHasDigitOrDot && !rightHasDigitOrDot;
         }
 
         function getVoiceTexts(oldStep, newStep) {
             let textsToSpeak = [];
-            if (!oldStep || !newStep) return textsToSpeak;
+            if (!newStep) return textsToSpeak;
+
+            // S'il n'y a pas d'ancienne étape (première étape lancée)
+            if (!oldStep) {
+                let leftHasDigitOrDot = /(\d|\.)/.test(newStep.gauche);
+                let rightHasDigitOrDot = /(\d|\.)/.test(newStep.droite);
+
+                if (!leftHasDigitOrDot && !rightHasDigitOrDot) {
+                    let textToRead = `${newStep.gauche.trim()} ${newStep.droite.trim()}`.replace(/\s+/g, ' ').trim();
+                    if(textToRead) textsToSpeak.push(textToRead);
+                } else {
+                    if (!isValueZero(newStep.gauche)) textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
+                    if (!isValueZero(newStep.droite)) textsToSpeak.push("Main droite, " + formatSpokenValue(newStep.droite));
+                }
+                return textsToSpeak;
+            }
 
             let leftChanged = newStep.gauche !== oldStep.gauche;
             let rightChanged = newStep.droite !== oldStep.droite;
@@ -849,7 +853,7 @@ Flux de : droite
                 clearInterval(intervalId);
                 intervalId = null;
             }
-            if (window.speechSynthesis) window.speechSynthesis.cancel(); // Coupe la voix si on modifie le texte
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
             
             sequence = [];
             previousStep = null;
@@ -977,14 +981,15 @@ Flux de : droite
             const step = sequence[currentIndex];
             
             if (isTextOnlyStep(step)) {
+                // Les étapes textuelles sont toujours lues à l'affichage (elles ne sont pas lues en avance par le warning)
                 if (enableTTS) {
                     let textToRead = `${step.gauche.trim()} ${step.droite.trim()}`.replace(/\s+/g, ' ').trim();
-                    if(textToRead) speakTexts([textToRead]);
+                    if(textToRead) speakTexts([textToRead], true);
                 }
-            } else if (shouldSpeak && enableTTS && previousStep) {
+            } else if (shouldSpeak && enableTTS) {
                 let textsToSpeak = getVoiceTexts(previousStep, step);
                 if (textsToSpeak.length > 0) {
-                    speakTexts(textsToSpeak);
+                    speakTexts(textsToSpeak, true);
                 }
             }
             previousStep = step; 
@@ -1041,10 +1046,9 @@ Flux de : droite
 
             const warningTime = intervalTime > 5 ? 5.0 : Math.max(0.5, intervalTime / 2);
 
+            // Annonce anticipée (Warning)
             if (remaining <= warningTime && remaining > 0 && !clickWarningPlayed) {
-                if (enableClick) {
-                    playClickClick();
-                }
+                if (enableClick) playClickClick();
                 clickWarningPlayed = true;
                 
                 if (enableTTS && sequence.length > 0) {
@@ -1054,23 +1058,30 @@ Flux de : droite
                     if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
                         // Fin de la séquence
                     } else {
+                        // On n'annonce pas les étapes textuelles à l'avance pour éviter de les couper
                         if (!isTextOnlyStep(nextStep)) {
                             let textsToSpeak = getVoiceTexts(currentStep, nextStep);
                             if (textsToSpeak.length > 0) {
-                                speakTexts(textsToSpeak);
+                                // clearQueue = false : on met dans la file d'attente pour ne pas couper la voix actuelle !
+                                speakTexts(textsToSpeak, false); 
                             }
                         }
                     }
                 }
             }
 
+            // Fin du timer
             if (elapsed >= intervalTime) {
-                // NOUVEAU : Attendre la fin de la lecture vocale si elle est en cours
+                // ATTENTE DE LA FIN DE LECTURE VOCALE
                 if (window.speechSynthesis && window.speechSynthesis.speaking) {
-                    // On ajuste lastUpdateTime pour que le temps reste bloqué à intervalTime
-                    // et que la transition se fasse immédiatement après la fin de la voix
-                    lastUpdateTime = Date.now() - (intervalTime * 1000);
-                    return; 
+                    // Sécurité : si la voix parle depuis plus de 15 secondes après la fin du timer, on force l'avance (anti-blocage navigateur)
+                    if (elapsed - intervalTime > 15) {
+                        window.speechSynthesis.cancel();
+                    } else {
+                        // On maintient le timer en attente
+                        lastUpdateTime = Date.now() - (intervalTime * 1000);
+                        return;
+                    }
                 }
 
                 if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
@@ -1082,6 +1093,7 @@ Flux de : droite
                 }
 
                 currentIndex = (currentIndex + 1) % sequence.length;
+                // shouldSpeak = false car l'étape a déjà été annoncée par le warning (ou sera annoncée si text-only)
                 updateDisplay(false); 
                 lastUpdateTime = Date.now();
             }
@@ -1145,6 +1157,7 @@ Flux de : droite
                 clearInterval(intervalId);
                 intervalId = null;
             }
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
             
             sequence = parseSequenceInput(sequenceInput.value);
             
@@ -1156,6 +1169,7 @@ Flux de : droite
             currentIndex = 0; 
             previousStep = null; 
             savedElapsed = 0; 
+            clickWarningPlayed = false;
             
             if (isTextOnlyStep(sequence[currentIndex])) {
                 intervalTime = 4;
@@ -1168,7 +1182,8 @@ Flux de : droite
                 return;
             }
             
-            updateDisplay(false); 
+            // On lance la première étape en activant la voix (shouldSpeak = true)
+            updateDisplay(true); 
             lastUpdateTime = Date.now();
             intervalId = setInterval(tick, tickRate);
             setButtonStates('playing');
@@ -1182,8 +1197,7 @@ Flux de : droite
                 intervalId = null;
                 setButtonStates('paused');
                 
-                // Arrêter la voix en cas de pause pour éviter qu'elle continue de parler
-                // et bloque l'interface au retour
+                // On coupe la voix si on met en pause pour ne pas être bloqué en attendant la fin d'une voix longue
                 if (window.speechSynthesis && window.speechSynthesis.speaking) {
                     window.speechSynthesis.cancel();
                 }
@@ -1206,6 +1220,9 @@ Flux de : droite
                 
                 lastUpdateTime = Date.now() - (savedElapsed * 1000);
                 
+                // On ré-autorise l'annonce du warning au cas où on revient de pause
+                clickWarningPlayed = false; 
+                
                 intervalId = setInterval(tick, tickRate);
                 setButtonStates('playing');
             }
@@ -1223,7 +1240,7 @@ Flux de : droite
             if (sequence.length === 0) return;
             initAudio();
             if (enableClick) playClickClick();
-            if (window.speechSynthesis) window.speechSynthesis.cancel(); // Coupe la voix
+            if (window.speechSynthesis) window.speechSynthesis.cancel(); // Coupe la file d'attente vocale
             
             currentIndex = (currentIndex - 1 + sequence.length) % sequence.length;
             savedElapsed = 0; 
@@ -1239,7 +1256,7 @@ Flux de : droite
             if (sequence.length === 0) return;
             initAudio();
             if (enableClick) playClickClick();
-            if (window.speechSynthesis) window.speechSynthesis.cancel(); // Coupe la voix
+            if (window.speechSynthesis) window.speechSynthesis.cancel(); // Coupe la file d'attente vocale
             
             currentIndex = (currentIndex + 1) % sequence.length;
             savedElapsed = 0; 
