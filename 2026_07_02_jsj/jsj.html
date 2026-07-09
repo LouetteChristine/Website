@@ -445,15 +445,15 @@
             <button type="button" id="exportBtn">Exporter</button>
         </div>
 
-        <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">* Le foie
-* Flux de : gauche
+        <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">Le foie:
+Flux de : gauche
 04 g : 22 d
 04 g : 14 d
 04 g : 01 g
 04 g : 05 g
 04 g : 18 g
 04 d : 18 g
-* Flux de : droite
+Flux de : droite
 22 g : 04 d
 14 g : 04 d
 01 d : 04 d
@@ -596,46 +596,47 @@
         const miniNextBtn = document.getElementById('miniNextBtn');
 
         // ==========================================
-        // FONCTIONS DE PARSE ET MAJ COMPTEUR
+        // FONCTIONS DE PARSE, FILTRE 100 ET MAJ COMPTEUR
         // ==========================================
+        
+        // FONCTION pour nettoyer l'affichage (supprime 100 et formatte)
+        function cleanForDisplay(val) {
+            let cleaned = val.replace(/\b100\b/g, '');
+            cleaned = cleaned.replace(/\s+/g, ' ').trim();
+            return cleaned || '-';
+        }
+
+        // NOUVELLE FONCTION : Vérifie si la valeur doit être tue (0, 100 seul, ou vide)
+        function isValueSilent(val) {
+            let cleaned = val.replace(/\b100\b/g, '').trim();
+            if (cleaned === '' || cleaned === '-') return true; // "100" seul ou vide -> on ne dit rien
+            
+            const match = cleaned.match(/\d+/); // On cherche les chiffres restants (s'il y en a)
+            // S'il n'y a pas de chiffre, ce n'est pas un "zéro", c'est du texte (ex: "g")
+            if (!match) return false; 
+            
+            return parseInt(match[0], 10) === 0;
+        }
+
         function parseSequenceInput(text) {
             const lines = text.trim().split('\n');
             const parsedSeq = [];
             for (let line of lines) {
                 if (line.trim() === '') continue; 
                 
-                let prefix = null;
-                let cleanLine = line.trim();
-
-                // Détection des préfixes * et +
-                if (cleanLine.startsWith('*')) {
-                    prefix = '*';
-                    cleanLine = cleanLine.substring(1).trim();
-                } else if (cleanLine.startsWith('+')) {
-                    prefix = '+';
-                    cleanLine = cleanLine.substring(1).trim();
-                }
-
                 // On sépare la ligne en deux parties
-                const parts = cleanLine.split(':');
-                let gauche = "";
-                let droite = "";
-
-                if (parts.length >= 2) {
-                    gauche = parts[0].trim();
-                    droite = parts.slice(1).join(':').trim(); // Gérer s'il y a plusieurs ':'
-                } else if (prefix && parts.length === 1) {
-                    // S'il y a un préfixe mais pas de ':', on met tout dans la partie gauche
-                    gauche = parts[0].trim();
-                }
-
-                // On ajoute l'étape si elle a un préfixe ou si les deux parties sont remplies
-                if (prefix || (gauche !== '' && droite !== '')) {
-                    parsedSeq.push({
-                        gauche: gauche,
-                        droite: droite,
-                        prefix: prefix
-                    });
+                const parts = line.split(':');
+                // On s'assure d'avoir bien deux parties pour pouvoir l'ajouter
+                if (parts.length === 2) {
+                    let gauche = parts[0].trim();
+                    let droite = parts[1].trim();
+                    
+                    if (gauche !== '' || droite !== '') {
+                        parsedSeq.push({
+                            gauche: gauche || '-',
+                            droite: droite || '-'
+                        });
+                    }
                 }
             }
             return parsedSeq;
@@ -721,12 +722,7 @@
             const currentSpeed = parseFloat(speedInput.value) || 0.8; // Récupérer la vitesse choisie
 
             texts.forEach(t => {
-                // Règle : Ne jamais prononcer "+"
-                // On remplace tous les + par du vide, et on nettoie les multiples espaces qui peuvent en résulter
-                const cleanedT = t.replace(/\+/g, '').replace(/\s+/g, ' ').trim();
-                if (!cleanedT) return; // Ne pas lire si le texte est vide après nettoyage
-
-                const utterance = new SpeechSynthesisUtterance(cleanedT);
+                const utterance = new SpeechSynthesisUtterance(t);
                 if (selectedVoice) {
                     utterance.voice = selectedVoice;
                     utterance.lang = selectedVoice.lang;
@@ -738,10 +734,16 @@
             });
         }
 
-        // FONCTION pour formater le texte (enlever le 0 initial et convertir g/d)
+        // FONCTION pour formater le texte (enlever 100, le 0 initial et convertir g/d)
         function formatSpokenValue(val) {
+            // Enlever 100 par sécurité
+            let cleanedVal = val.replace(/\b100\b/gi, '');
+            
             // Enlever le 0 initial (ex: "04" devient "4")
-            let cleanedVal = val.replace(/\b0(\d)\b/i, '$1');
+            cleanedVal = cleanedVal.replace(/\b0(\d)\b/i, '$1');
+            
+            // Nettoyer les espaces multiples
+            cleanedVal = cleanedVal.replace(/\s+/g, ' ').trim();
 
             // Extraire le chiffre pour vérifier à quel doigt il correspond
             const match = cleanedVal.match(/\d+/);
@@ -775,22 +777,12 @@
             }
         }
 
-        // Vérifie si une étape ne contient aucun chiffre
+        // Vérifie si une étape ne contient aucun chiffre pertinent (en ignorant 100)
         function isTextOnlyStep(step) {
             if (!step) return false;
-            return !/\d/.test(step.gauche) && !/\d/.test(step.droite);
-        }
-
-        // Vérifie si la valeur numérique de la chaîne est 0
-        function isValueZero(val) {
-            const match = val.match(/\d+/);
-            return match ? parseInt(match[0], 10) === 0 : false;
-        }
-
-        // NOUVELLE FONCTION : Vérifie si la valeur numérique de la chaîne est 100
-        function isValueOneHundred(val) {
-            const match = val.match(/\d+/);
-            return match ? parseInt(match[0], 10) === 100 : false;
+            let gClean = step.gauche.replace(/\b100\b/g, '').trim();
+            let dClean = step.droite.replace(/\b100\b/g, '').trim();
+            return !/\d/.test(gClean) && !/\d/.test(dClean);
         }
 
         // FONCTION pour calculer exactement ce qui doit être dit
@@ -798,40 +790,29 @@
             let textsToSpeak = [];
             if (!oldStep || !newStep) return textsToSpeak;
 
-            // Gestion des lignes avec préfixe * ou +
-            if (newStep.prefix === '*' || newStep.prefix === '+') {
-                // Si c'est du texte pur, on le lit d'une seule traite
-                if (isTextOnlyStep(newStep)) {
-                    textsToSpeak.push((newStep.gauche + ' ' + newStep.droite).trim());
-                } else {
-                    // Si la ligne avec préfixe contient des chiffres, on respecte la logique Main Gauche/Droite
-                    let leftChanged = newStep.gauche !== oldStep.gauche;
-                    let rightChanged = newStep.droite !== oldStep.droite;
-                    if (!leftChanged && !rightChanged) {
-                        leftChanged = true; rightChanged = true; // Forcer la lecture si pas de changement
-                    }
-                    // Règle ajoutée : ne pas prononcer si la valeur est 100
-                    if (leftChanged && !isValueZero(newStep.gauche) && !isValueOneHundred(newStep.gauche)) {
-                        textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
-                    }
-                    if (rightChanged && !isValueZero(newStep.droite) && !isValueOneHundred(newStep.droite)) {
-                        textsToSpeak.push("Main droite, " + formatSpokenValue(newStep.droite));
-                    }
-                }
-                return textsToSpeak;
-            }
-
             let leftChanged = newStep.gauche !== oldStep.gauche;
             let rightChanged = newStep.droite !== oldStep.droite;
 
             if (!leftChanged && !rightChanged) return textsToSpeak;
 
-            // ON PRONONCE TOUTES LES ZONES ROUGES (celles qui ont changé) SAUF si la valeur est 0 ou 100
-            // (La règle qui empêchait de lire les zones sans chiffre a été supprimée)
-            if (leftChanged && !isValueZero(newStep.gauche) && !isValueOneHundred(newStep.gauche)) {
+            let leftHasDigit = /\d/.test(newStep.gauche.replace(/\b100\b/g, ''));
+            let rightHasDigit = /\d/.test(newStep.droite.replace(/\b100\b/g, ''));
+
+            // Si aucune des deux zones n'a de chiffre
+            if (!leftHasDigit && !rightHasDigit) {
+                // On lit simplement le texte assemblé (ex: "Flux de gauche")
+                if (leftChanged || rightChanged) {
+                    let textToRead = `${newStep.gauche.replace(/\b100\b/g, '').trim()} ${newStep.droite.replace(/\b100\b/g, '').trim()}`.replace(/\s+/g, ' ').trim();
+                    if(textToRead) textsToSpeak.push(textToRead);
+                }
+                return textsToSpeak;
+            }
+
+            // SINON : on prononce toutes les zones rouges (celles qui ont changé) SAUF si la valeur est silencieuse (0 ou 100 seul)
+            if (leftChanged && !isValueSilent(newStep.gauche)) {
                 textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
             }
-            if (rightChanged && !isValueZero(newStep.droite) && !isValueOneHundred(newStep.droite)) {
+            if (rightChanged && !isValueSilent(newStep.droite)) {
                 textsToSpeak.push("Main droite, " + formatSpokenValue(newStep.droite));
             }
 
@@ -842,7 +823,7 @@
         // 1. SCRIPT DE SAUVEGARDE (LocalStorage)
         // ==========================================
         
-        const defaultSequenceText = `* Le foie\n* Flux de : gauche\n04 g : 22 d\n04 g : 14 d\n04 g : 01 g\n04 g : 05 g\n04 g : 18 g\n04 d : 18 g\n* Flux de : droite\n22 g : 04 d\n14 g : 04 d\n01 d : 04 d\n05 d : 04 d\n18 d : 04 d\n18 d : 04 g`;
+        const defaultSequenceText = `Le foie\nFlux de : gauche\n04 g : 22 d\n04 g : 14 d\n04 g : 01 g\n04 g : 05 g\n04 g : 18 g\n04 d : 18 g\nFlux de : droite\n22 g : 04 d\n14 g : 04 d\n01 d : 04 d\n05 d : 04 d\n18 d : 04 d\n18 d : 04 g`;
 
         function saveSettings() {
             const settings = {
@@ -1013,28 +994,23 @@
             if (sequence.length === 0) return;
             const step = sequence[currentIndex];
             
-            if (shouldSpeak && enableTTS) {
-                let textsToSpeak = [];
-                
-                // Les lignes avec préfixe * ou + sont lues immédiatement à l'affichage
-                if ((step.prefix === '*' || step.prefix === '+') && isTextOnlyStep(step)) {
-                    textsToSpeak.push((step.gauche + ' ' + step.droite).trim());
-                } else if (previousStep) {
-                    textsToSpeak = getVoiceTexts(previousStep, step);
-                } else {
-                    // Première étape de la séquence, on la lit si elle a changé (sauf si 0 ou 100)
-                    if (!isValueZero(step.gauche) && !isValueOneHundred(step.gauche)) textsToSpeak.push("Main gauche, " + formatSpokenValue(step.gauche));
-                    if (!isValueZero(step.droite) && !isValueOneHundred(step.droite)) textsToSpeak.push("Main droite, " + formatSpokenValue(step.droite));
+            if (isTextOnlyStep(step)) {
+                // Si c'est du texte seul, on le lit immédiatement
+                if (enableTTS) {
+                    let textToRead = `${step.gauche.replace(/\b100\b/g, '').trim()} ${step.droite.replace(/\b100\b/g, '').trim()}`.replace(/\s+/g, ' ').trim();
+                    if(textToRead) speakTexts([textToRead]);
                 }
-
+            } else if (shouldSpeak && enableTTS && previousStep) {
+                let textsToSpeak = getVoiceTexts(previousStep, step);
                 if (textsToSpeak.length > 0) {
                     speakTexts(textsToSpeak);
                 }
             }
             previousStep = step; 
 
-            gaucheText.textContent = step.gauche;
-            droiteText.textContent = step.droite;
+            // Affichage sans le "100"
+            gaucheText.textContent = cleanForDisplay(step.gauche);
+            droiteText.textContent = cleanForDisplay(step.droite);
             stepCounter.textContent = (currentIndex + 1);
             
             let nextIndex = (currentIndex + 1) % sequence.length;
@@ -1046,13 +1022,19 @@
                 droiteNext.classList.remove('changed');
             } else {
                 const nextStep = sequence[nextIndex];
-                gaucheNext.textContent = nextStep.gauche;
-                droiteNext.textContent = nextStep.droite;
+                const dispGauche = cleanForDisplay(step.gauche);
+                const dispDroite = cleanForDisplay(step.droite);
+                const dispNextGauche = cleanForDisplay(nextStep.gauche);
+                const dispNextDroite = cleanForDisplay(nextStep.droite);
                 
-                if (nextStep.gauche !== step.gauche) gaucheNext.classList.add('changed');
+                gaucheNext.textContent = dispNextGauche;
+                droiteNext.textContent = dispNextDroite;
+                
+                // Comparaison visuelle pour la couleur rouge (changée)
+                if (dispNextGauche !== dispGauche) gaucheNext.classList.add('changed');
                 else gaucheNext.classList.remove('changed');
 
-                if (nextStep.droite !== step.droite) droiteNext.classList.add('changed');
+                if (dispNextDroite !== dispDroite) droiteNext.classList.add('changed');
                 else droiteNext.classList.remove('changed');
             }
             clickWarningPlayed = false;
@@ -1064,9 +1046,9 @@
             
             const currentStep = sequence[currentIndex];
             
-            // Déterminer la durée de l'étape actuelle (la règle des 5 secondes pour * a été supprimée)
+            // Déterminer la durée de l'étape actuelle
             if (isTextOnlyStep(currentStep)) {
-                intervalTime = 4; // 4 secondes pour les étapes textuelles sans préfixe
+                intervalTime = 4; // 4 secondes pour les étapes textuelles
             } else {
                 let currentInputTime = getIntervalSeconds();
                 if (!isNaN(currentInputTime) && currentInputTime > 0) {
@@ -1095,8 +1077,9 @@
                     if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
                         // Fin de la séquence, on ne dit rien
                     } else {
-                        // On n'annonce pas en avance les étapes avec * ou +, mais on lit le texte simple
-                        if (!nextStep.prefix) {
+                        // Si la prochaine étape est textuelle, on ne l'annonce pas en avance 
+                        // pour éviter de la couper, elle sera annoncée à son affichage
+                        if (!isTextOnlyStep(nextStep)) {
                             let textsToSpeak = getVoiceTexts(currentStep, nextStep);
                             if (textsToSpeak.length > 0) {
                                 speakTexts(textsToSpeak);
@@ -1144,7 +1127,7 @@
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
-                miniStartBtn.disabled = false; 
+                miniStartBtn.disabled = false;
                 miniNextBtn.disabled = false;
             } else if (state === 'stopped') {
                 startBtn.disabled = false;
@@ -1191,9 +1174,8 @@
             previousStep = null; 
             savedElapsed = 0; // Reset du temps sauvegardé quand on démarre
             
-            // Initialiser la durée en fonction de la première étape (la règle des 5 secondes pour * a été supprimée)
-            const firstStep = sequence[currentIndex];
-            if (isTextOnlyStep(firstStep)) {
+            // Initialiser la durée en fonction de la première étape
+            if (isTextOnlyStep(sequence[currentIndex])) {
                 intervalTime = 4;
             } else {
                 intervalTime = getIntervalSeconds();
@@ -1224,9 +1206,8 @@
         function continueAnimation() {
             if (!intervalId && sequence.length > 0) {
                 initAudio();
-                // Initialiser la durée en fonction de l'étape actuelle (la règle des 5 secondes pour * a été supprimée)
-                const currentStep = sequence[currentIndex];
-                if (isTextOnlyStep(currentStep)) {
+                // Initialiser la durée en fonction de l'étape actuelle (sans réinitialiser currentIndex)
+                if (isTextOnlyStep(sequence[currentIndex])) {
                     intervalTime = 4;
                 } else {
                     intervalTime = getIntervalSeconds(); 
@@ -1316,32 +1297,41 @@
         // 4. RACCOURCIS CLAVIER (Espace + Flèches)
         // ==========================================
         document.addEventListener('keydown', (e) => {
-            // Si on tape dans une zone de texte, un input ou un select, on ignore les raccourcis
-            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+            // Si on tape dans une zone de texte, on ignore les raccourcis
+            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                return;
+            }
 
-            // Espace = Pause/Continuer
-            if (e.code === 'Space' || e.key === ' ') {
+            if (e.code === 'Space') {
                 e.preventDefault();
-                togglePauseContinue();
-            } 
-            // Flèche gauche = Précédent
-            else if (e.key === 'ArrowLeft') {
+                // Si un bouton a le focus (entouré), on l'enlève pour éviter de le déclencher deux fois
+                if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
+                    document.activeElement.blur();
+                }
+                
+                // Logique de bascule
+                if (intervalId) {
+                    pauseAnimation();
+                } else if (sequence.length > 0) {
+                    continueAnimation();
+                } else {
+                    startAnimation();
+                }
+            }
+            else if (e.code === 'ArrowLeft') {
                 e.preventDefault();
-                stepBack();
-            } 
-            // Flèche droite = Suivant
-            else if (e.key === 'ArrowRight') {
+                if (!prevBtn.disabled) stepBack();
+            }
+            else if (e.code === 'ArrowRight') {
                 e.preventDefault();
-                stepForward();
-            } 
-            // Échap = Quitter le plein écran
-            else if (e.key === 'Escape') {
+                if (!nextBtn.disabled) stepForward();
+            }
+            else if (e.code === 'Escape') {
                 if (document.fullscreenElement) {
                     exitFullscreen();
                 }
             }
         });
-
     </script>
 </body>
 </html>
