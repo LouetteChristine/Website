@@ -706,7 +706,7 @@ Flux de : droite
             const selectedVoiceIndex = voiceSelect.value;
             const selectedVoice = availableVoices[selectedVoiceIndex];
             const currentSpeed = parseFloat(speedInput.value) || 0.8;
-            const currentVolume = (parseInt(volumeInput.value) || 8) / 10; // Volume 1-10 converti en 0.1-1.0
+            const currentVolume = (parseInt(volumeInput.value) || 8) / 10;
 
             texts.forEach(t => {
                 const utterance = new SpeechSynthesisUtterance(t);
@@ -717,7 +717,7 @@ Flux de : droite
                     utterance.lang = 'fr-FR';
                 }
                 utterance.rate = currentSpeed; 
-                utterance.volume = currentVolume; // Applique le volume
+                utterance.volume = currentVolume; 
                 window.speechSynthesis.speak(utterance);
             });
         }
@@ -849,6 +849,8 @@ Flux de : droite
                 clearInterval(intervalId);
                 intervalId = null;
             }
+            if (window.speechSynthesis) window.speechSynthesis.cancel(); // Coupe la voix si on modifie le texte
+            
             sequence = [];
             previousStep = null;
             savedElapsed = 0; 
@@ -932,7 +934,7 @@ Flux de : droite
 
         function playClickSound(time = 0) {
             if (!audioContext) return;
-            const currentVolume = (parseInt(volumeInput.value) || 8) / 10; // Volume 1-10 converti en 0.1-1.0
+            const currentVolume = (parseInt(volumeInput.value) || 8) / 10; 
             
             const osc = audioContext.createOscillator();
             const gain = audioContext.createGain();
@@ -1063,6 +1065,14 @@ Flux de : droite
             }
 
             if (elapsed >= intervalTime) {
+                // NOUVEAU : Attendre la fin de la lecture vocale si elle est en cours
+                if (window.speechSynthesis && window.speechSynthesis.speaking) {
+                    // On ajuste lastUpdateTime pour que le temps reste bloqué à intervalTime
+                    // et que la transition se fasse immédiatement après la fin de la voix
+                    lastUpdateTime = Date.now() - (intervalTime * 1000);
+                    return; 
+                }
+
                 if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
                     clearInterval(intervalId);
                     intervalId = null;
@@ -1171,6 +1181,12 @@ Flux de : droite
                 clearInterval(intervalId);
                 intervalId = null;
                 setButtonStates('paused');
+                
+                // Arrêter la voix en cas de pause pour éviter qu'elle continue de parler
+                // et bloque l'interface au retour
+                if (window.speechSynthesis && window.speechSynthesis.speaking) {
+                    window.speechSynthesis.cancel();
+                }
             }
         }
 
@@ -1206,7 +1222,9 @@ Flux de : droite
         function stepBack() {
             if (sequence.length === 0) return;
             initAudio();
-            if (enableClick) playClickClick(); 
+            if (enableClick) playClickClick();
+            if (window.speechSynthesis) window.speechSynthesis.cancel(); // Coupe la voix
+            
             currentIndex = (currentIndex - 1 + sequence.length) % sequence.length;
             savedElapsed = 0; 
             updateDisplay(); 
@@ -1220,7 +1238,9 @@ Flux de : droite
         function stepForward() {
             if (sequence.length === 0) return;
             initAudio();
-            if (enableClick) playClickClick(); 
+            if (enableClick) playClickClick();
+            if (window.speechSynthesis) window.speechSynthesis.cancel(); // Coupe la voix
+            
             currentIndex = (currentIndex + 1) % sequence.length;
             savedElapsed = 0; 
             updateDisplay(); 
