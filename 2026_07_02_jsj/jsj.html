@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="fr">
-    
 <head>  
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -907,6 +906,8 @@ Flux de : droite
             droiteText.classList.remove('hand-value-zero');
             gaucheNext.textContent = '-';
             droiteNext.textContent = '-';
+            gaucheNext.classList.remove('hand-value-zero');
+            droiteNext.classList.remove('hand-value-zero');
         });
         
         minutesInput.addEventListener('input', saveSettings);
@@ -1050,6 +1051,8 @@ Flux de : droite
                 droiteNext.textContent = "FIN";
                 gaucheNext.classList.remove('changed');
                 droiteNext.classList.remove('changed');
+                gaucheNext.classList.remove('hand-value-zero');
+                droiteNext.classList.remove('hand-value-zero');
             } else {
                 const nextStep = sequence[nextIndex];
                 const dispGauche = cleanForDisplay(step.gauche);
@@ -1059,6 +1062,10 @@ Flux de : droite
                 
                 gaucheNext.textContent = dispNextGauche;
                 droiteNext.textContent = dispNextDroite;
+                
+                // Rendre la prochaine valeur "0" transparente si c'est le cas
+                gaucheNext.classList.toggle('hand-value-zero', isValueZero(nextStep.gauche));
+                droiteNext.classList.toggle('hand-value-zero', isValueZero(nextStep.droite));
                 
                 if (dispNextGauche !== dispGauche) gaucheNext.classList.add('changed');
                 else gaucheNext.classList.remove('changed');
