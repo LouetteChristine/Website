@@ -31,7 +31,7 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            display: none; /* Caché par défaut */
+            display: none; 
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             transition: background-color 0.2s;
         }
@@ -39,7 +39,7 @@
             background-color: #c82333;
         }
         body.fullscreen-active .exit-fullscreen-btn {
-            display: block; /* Affiché uniquement en plein écran */
+            display: block; 
         }
 
         /* --- Styles pour le mode Plein Écran --- */
@@ -63,7 +63,6 @@
         body.fullscreen-active .hand-value { font-size: 7rem; }
         body.fullscreen-active .hand-next { font-size: 4rem; }
         
-        /* --- Affichage des infos basses en plein écran --- */
         body.fullscreen-active .bottom-info {
             max-width: 90vw;
             margin-top: 20px;
@@ -115,12 +114,8 @@
             body.fullscreen-active .hand-box {
                 width: 90%;
             }
-            body.fullscreen-active .hand-value { 
-                font-size: 5rem; 
-            }
-            body.fullscreen-active .hand-next { 
-                font-size: 2rem; 
-            }
+            body.fullscreen-active .hand-value { font-size: 5rem; }
+            body.fullscreen-active .hand-next { font-size: 2rem; }
             .input-row {
                 flex-direction: column;
                 align-items: stretch;
@@ -134,6 +129,9 @@
             .playback-controls {
                 flex-wrap: wrap;
                 justify-content: center;
+            }
+            .file-controls {
+                flex-wrap: wrap;
             }
         }
 
@@ -260,7 +258,6 @@
         #prevBtn, #nextBtn { background-color: #6c757d; }
         #prevBtn:hover:not(:disabled), #nextBtn:hover:not(:disabled) { background-color: #5a6268; }
         
-        /* Styles des boutons Clic et Voix */
         #clickBtn { background-color: #6c757d; }
         #clickBtn:hover:not(.click-active) { background-color: #5a6268; }
         #clickBtn.click-active { background-color: #007bff; }
@@ -271,7 +268,6 @@
         #ttsBtn.tts-active { background-color: #e83e8c; }
         #ttsBtn.tts-active:hover { background-color: #d63384; }
 
-        /* Style pour le sélecteur de voix */
         #voiceSelect {
             padding: 8px;
             font-size: 16px;
@@ -434,7 +430,6 @@
 </head>
 <body>
 
-    <!-- Bouton flottant pour quitter le plein écran -->
     <button id="exitFullscreenBtn" class="exit-fullscreen-btn">✖ Quitter</button>
 
     <div class="controls">
@@ -443,6 +438,8 @@
             <label for="fileInput" class="import-btn">Importer</label>
             <input type="file" id="fileInput" accept=".txt">
             <button type="button" id="exportBtn">Exporter</button>
+            <button type="button" id="reinBtn">Flux du rein</button>
+            <button type="button" id="driveBtn">Drive</button>
         </div>
 
         <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">* Le foie
@@ -549,16 +546,13 @@
         let audioContext = null;
         let clickWarningPlayed = false;
         
-        // Variables séparées pour le clic et la voix
         let enableClick = false;
         let enableTTS = false;
         let previousStep = null;
         let availableVoices = [];
         
-        // Variable pour sauvegarder le temps écoulé lors de la pause
         let savedElapsed = 0;
 
-        // Éléments DOM
         const gaucheText = document.getElementById('gaucheText');
         const droiteText = document.getElementById('droiteText');
         const gaucheNext = document.getElementById('gaucheNext');
@@ -594,6 +588,10 @@
         const miniStartBtn = document.getElementById('miniStartBtn');
         const miniPauseBtn = document.getElementById('miniPauseBtn');
         const miniNextBtn = document.getElementById('miniNextBtn');
+        
+        // Nouveaux boutons
+        const reinBtn = document.getElementById('reinBtn');
+        const driveBtn = document.getElementById('driveBtn');
 
         // ==========================================
         // FONCTIONS DE PARSE ET MAJ COMPTEUR
@@ -607,7 +605,6 @@
                 let prefix = null;
                 let cleanLine = line.trim();
 
-                // Détection des préfixes * et +
                 if (cleanLine.startsWith('*')) {
                     prefix = '*';
                     cleanLine = cleanLine.substring(1).trim();
@@ -616,20 +613,17 @@
                     cleanLine = cleanLine.substring(1).trim();
                 }
 
-                // On sépare la ligne en deux parties
                 const parts = cleanLine.split(':');
                 let gauche = "";
                 let droite = "";
 
                 if (parts.length >= 2) {
                     gauche = parts[0].trim();
-                    droite = parts.slice(1).join(':').trim(); // Gérer s'il y a plusieurs ':'
+                    droite = parts.slice(1).join(':').trim();
                 } else if (prefix && parts.length === 1) {
-                    // S'il y a un préfixe mais pas de ':', on met tout dans la partie gauche
                     gauche = parts[0].trim();
                 }
 
-                // On ajoute l'étape si elle a un préfixe ou si les deux parties sont remplies
                 if (prefix || (gauche !== '' && droite !== '')) {
                     parsedSeq.push({
                         gauche: gauche,
@@ -672,12 +666,10 @@
         function loadVoices() {
             if (!window.speechSynthesis) return;
             const allVoices = window.speechSynthesis.getVoices();
-            voiceSelect.innerHTML = ''; // Vider la liste actuelle
+            voiceSelect.innerHTML = ''; 
             
-            // Filtrer pour ne garder que les voix françaises
             availableVoices = allVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith('fr'));
 
-            // Si aucune voix française n'est trouvée
             if (availableVoices.length === 0) {
                 const option = document.createElement('option');
                 option.textContent = "Aucune voix FR trouvée";
@@ -694,7 +686,6 @@
                 voiceSelect.appendChild(option);
             });
 
-            // Restaurer la voix sauvegardée si elle existe
             const saved = localStorage.getItem('mainsGD_settings');
             if (saved) {
                 const settings = JSON.parse(saved);
@@ -718,13 +709,11 @@
             
             const selectedVoiceIndex = voiceSelect.value;
             const selectedVoice = availableVoices[selectedVoiceIndex];
-            const currentSpeed = parseFloat(speedInput.value) || 0.8; // Récupérer la vitesse choisie
+            const currentSpeed = parseFloat(speedInput.value) || 0.8;
 
             texts.forEach(t => {
-                // Règle : Ne jamais prononcer "+"
-                // On remplace tous les + par du vide, et on nettoie les multiples espaces qui peuvent en résulter
                 const cleanedT = t.replace(/\+/g, '').replace(/\s+/g, ' ').trim();
-                if (!cleanedT) return; // Ne pas lire si le texte est vide après nettoyage
+                if (!cleanedT) return; 
 
                 const utterance = new SpeechSynthesisUtterance(cleanedT);
                 if (selectedVoice) {
@@ -733,41 +722,28 @@
                 } else {
                     utterance.lang = 'fr-FR';
                 }
-                utterance.rate = currentSpeed; // Appliquer la vitesse
+                utterance.rate = currentSpeed; 
                 window.speechSynthesis.speak(utterance);
             });
         }
 
-        // FONCTION pour formater le texte (enlever le 0 initial et convertir g/d)
         function formatSpokenValue(val) {
-            // Enlever le 0 initial (ex: "04" devient "4")
             let cleanedVal = val.replace(/\b0(\d)\b/i, '$1');
 
-            // Extraire le chiffre pour vérifier à quel doigt il correspond
             const match = cleanedVal.match(/\d+/);
             let fingerName = "";
 
             if (match) {
                 const num = parseInt(match[0], 10);
-                
-                // Associer le chiffre au nom du doigt
-                if ([1, 16, 9, 19, 21].includes(num)) {
-                    fingerName = "Pouce";
-                } else if ([5, 6, 10, 11, 22].includes(num)) {
-                    fingerName = "Index";
-                } else if ([6, 25, 3, 12, 13].includes(num)) { 
-                    fingerName = "Majeur";
-                } else if ([7, 2, 17, 4, 14].includes(num)) {
-                    fingerName = "Annulaire";
-                } else if ([24, 23, 18, 20, 15].includes(num)) {
-                    fingerName = "Auriculaire";
-                }
+                if ([1, 16, 9, 19, 21].includes(num)) fingerName = "Pouce";
+                else if ([5, 6, 10, 11, 22].includes(num)) fingerName = "Index";
+                else if ([6, 25, 3, 12, 13].includes(num)) fingerName = "Majeur";
+                else if ([7, 2, 17, 4, 14].includes(num)) fingerName = "Annulaire";
+                else if ([24, 23, 18, 20, 15].includes(num)) fingerName = "Auriculaire";
             }
 
-            // Remplacer g/d par gauche/droit
             cleanedVal = cleanedVal.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit');
 
-            // Construire la phrase finale
             if (fingerName) {
                 return `${cleanedVal}, raccourci ${fingerName}`;
             } else {
@@ -775,42 +751,34 @@
             }
         }
 
-        // Vérifie si une étape ne contient aucun chiffre
         function isTextOnlyStep(step) {
             if (!step) return false;
             return !/\d/.test(step.gauche) && !/\d/.test(step.droite);
         }
 
-        // Vérifie si la valeur numérique de la chaîne est 0
         function isValueZero(val) {
             const match = val.match(/\d+/);
             return match ? parseInt(match[0], 10) === 0 : false;
         }
 
-        // NOUVELLE FONCTION : Vérifie si la valeur numérique de la chaîne est 100
         function isValueOneHundred(val) {
             const match = val.match(/\d+/);
             return match ? parseInt(match[0], 10) === 100 : false;
         }
 
-        // FONCTION pour calculer exactement ce qui doit être dit
         function getVoiceTexts(oldStep, newStep) {
             let textsToSpeak = [];
             if (!oldStep || !newStep) return textsToSpeak;
 
-            // Gestion des lignes avec préfixe * ou +
             if (newStep.prefix === '*' || newStep.prefix === '+') {
-                // Si c'est du texte pur, on le lit d'une seule traite
                 if (isTextOnlyStep(newStep)) {
                     textsToSpeak.push((newStep.gauche + ' ' + newStep.droite).trim());
                 } else {
-                    // Si la ligne avec préfixe contient des chiffres, on respecte la logique Main Gauche/Droite
                     let leftChanged = newStep.gauche !== oldStep.gauche;
                     let rightChanged = newStep.droite !== oldStep.droite;
                     if (!leftChanged && !rightChanged) {
-                        leftChanged = true; rightChanged = true; // Forcer la lecture si pas de changement
+                        leftChanged = true; rightChanged = true; 
                     }
-                    // Règle ajoutée : ne pas prononcer si la valeur est 100
                     if (leftChanged && !isValueZero(newStep.gauche) && !isValueOneHundred(newStep.gauche)) {
                         textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
                     }
@@ -829,13 +797,10 @@
             let leftHasDigit = /\d/.test(newStep.gauche);
             let rightHasDigit = /\d/.test(newStep.droite);
 
-            // "Supprime la règle pour les deux zones rouges qui ne contiennent pas de chiffre."
-            // Si aucune des deux zones n'a de chiffre et qu'il n'y a pas de préfixe, on ne lit plus rien.
             if (!leftHasDigit && !rightHasDigit) {
                 return textsToSpeak; 
             }
 
-            // SINON : on prononce toutes les zones rouges (celles qui ont changé) SAUF si la valeur est 0 ou 100
             if (leftChanged && leftHasDigit && !isValueZero(newStep.gauche) && !isValueOneHundred(newStep.gauche)) {
                 textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
             }
@@ -847,7 +812,7 @@
         }
 
         // ==========================================
-        // 1. SCRIPT DE SAUVEGARDE (LocalStorage)
+        // 1. SCRIPT DE SAUVEGARDE
         // ==========================================
         
         const defaultSequenceText = `* Le foie\n* Flux de : gauche\n04 g : 22 d\n04 g : 14 d\n04 g : 01 g\n04 g : 05 g\n04 g : 18 g\n04 d : 18 g\n* Flux de : droite\n22 g : 04 d\n14 g : 04 d\n01 d : 04 d\n05 d : 04 d\n18 d : 04 d\n18 d : 04 g`;
@@ -889,7 +854,6 @@
             }
         }
 
-        // Si on modifie le texte, on remet à zéro l'animation en cours
         sequenceInput.addEventListener('input', () => {
             saveSettings();
             updateTotalCounter();
@@ -900,7 +864,7 @@
             }
             sequence = [];
             previousStep = null;
-            savedElapsed = 0; // Reset du temps sauvegardé
+            savedElapsed = 0; 
             setButtonStates('stopped');
             stepCounter.textContent = '0';
             countdownVal.textContent = formatTime(getIntervalSeconds() || 0);
@@ -919,11 +883,10 @@
         updateTotalCounter();
 
         // ==========================================
-        // 2. EXPORT DE FICHIER
+        // 2. IMPORT / EXPORT
         // ==========================================
         exportBtn.addEventListener('click', (e) => {
             e.preventDefault(); 
-            
             const textToExport = sequenceInput.value;
             const blob = new Blob([textToExport], { type: "text/plain;charset=utf-8" });
             const url = URL.createObjectURL(blob);
@@ -937,6 +900,54 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }, 100);
+        });
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    sequenceInput.value = e.target.result;
+                    saveSettings();
+                    updateTotalCounter();
+                    location.reload(); 
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // BOUTON FLUX DU REIN
+        reinBtn.addEventListener('click', () => {
+            const fileId = '18KL0dLcX5xwuI7wq5lpQvCB00U1bGbGm';
+            const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+            const viewUrl = `https://drive.google.com/file/d/${fileId}/view?usp=drive_link`;
+            
+            fetch(directUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error('Erreur réseau');
+                    return response.text();
+                })
+                .then(text => {
+                    // Google Drive peut renvoyer une page HTML de warning pour les gros fichiers ou virus scan
+                    if (text.trim().startsWith("<!") || text.trim().startsWith("<html")) {
+                        throw new Error("Réponse HTML reçue au lieu du fichier");
+                    }
+                    sequenceInput.value = text;
+                    saveSettings();
+                    location.reload();
+                })
+                .catch(error => {
+                    console.error('Erreur lors du téléchargement depuis Drive:', error);
+                    alert("Le téléchargement direct a été bloqué par les sécurités de Google Drive (CORS). Le fichier va s'ouvrir dans un nouvel onglet : veuillez le télécharger manuellement, puis utilisez le bouton 'Importer' de l'application.");
+                    window.open(viewUrl, '_blank');
+                });
+        });
+
+        // BOUTON DOSSIER DRIVE
+        driveBtn.addEventListener('click', () => {
+            const folderUrl = 'https://drive.google.com/drive/folders/10vg3k8MGWGMxc_3pdWISPQAZh6K_Gu-1?usp=drive_link';
+            alert("Le dossier Google Drive va s'ouvrir dans un nouvel onglet. Téléchargez le fichier de votre choix, puis utilisez le bouton 'Importer' pour le charger ici.");
+            window.open(folderUrl, '_blank');
         });
 
         // ==========================================
@@ -1024,15 +1035,11 @@
             if (shouldSpeak && enableTTS) {
                 let textsToSpeak = [];
                 
-                // Les lignes avec préfixe * ou + sont lues immédiatement à l'affichage
                 if ((step.prefix === '*' || step.prefix === '+') && isTextOnlyStep(step)) {
                     textsToSpeak.push((step.gauche + ' ' + step.droite).trim());
                 } else if (previousStep) {
                     textsToSpeak = getVoiceTexts(previousStep, step);
-                } else if (isTextOnlyStep(step)) {
-                    // Règle supprimée : on ne lit plus les zones sans chiffre sans préfixe
-                } else {
-                    // Première étape avec des chiffres, on la lit (sauf si 0 ou 100)
+                } else if (!isTextOnlyStep(step)) {
                     if (/\d/.test(step.gauche) && !isValueZero(step.gauche) && !isValueOneHundred(step.gauche)) textsToSpeak.push("Main gauche, " + formatSpokenValue(step.gauche));
                     if (/\d/.test(step.droite) && !isValueZero(step.droite) && !isValueOneHundred(step.droite)) textsToSpeak.push("Main droite, " + formatSpokenValue(step.droite));
                 }
@@ -1074,13 +1081,12 @@
             
             const currentStep = sequence[currentIndex];
             
-            // Déterminer la durée de l'étape actuelle
             if (currentStep.prefix === '*') {
-                intervalTime = 5; // 5 secondes pour les étapes commençant par *
+                intervalTime = 5; 
             } else if (currentStep.prefix === '+') {
-                intervalTime = getIntervalSeconds(); // Intervalle par défaut pour +
+                intervalTime = getIntervalSeconds(); 
             } else if (isTextOnlyStep(currentStep)) {
-                intervalTime = 4; // 4 secondes pour les étapes textuelles sans préfixe
+                intervalTime = 4; 
             } else {
                 let currentInputTime = getIntervalSeconds();
                 if (!isNaN(currentInputTime) && currentInputTime > 0) {
@@ -1093,7 +1099,6 @@
             const progressPercent = (elapsed / intervalTime) * 100;
             progressBar.style.width = Math.min(100, progressPercent) + '%';
 
-            // Avertir 5s avant la fin, ou la moitié du temps si le temps est court
             const warningTime = intervalTime > 5 ? 5.0 : Math.max(0.5, intervalTime / 2);
 
             if (remaining <= warningTime && remaining > 0 && !clickWarningPlayed) {
@@ -1107,9 +1112,8 @@
                     const nextStep = sequence[nextIdx];
                     
                     if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
-                        // Fin de la séquence, on ne dit rien
+                        // Fin
                     } else {
-                        // On n'annonce pas en avance les étapes avec * ou +, ni le texte simple pour éviter les coupures
                         if (!nextStep.prefix && !isTextOnlyStep(nextStep)) {
                             let textsToSpeak = getVoiceTexts(currentStep, nextStep);
                             if (textsToSpeak.length > 0) {
@@ -1125,7 +1129,7 @@
                     clearInterval(intervalId);
                     intervalId = null;
                     setButtonStates('stopped');
-                    playEndClicks(); // Lance les 5 clics de fin
+                    playEndClicks(); 
                     return;
                 }
 
@@ -1142,7 +1146,6 @@
                 pauseBtn.textContent = "⏸ Pause"; 
                 miniPauseBtn.textContent = "⏸";
                 miniPauseBtn.disabled = false;
-                
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
@@ -1154,7 +1157,6 @@
                 pauseBtn.textContent = "⏵ Continuer"; 
                 miniPauseBtn.textContent = "▶";
                 miniPauseBtn.disabled = false;
-                
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
@@ -1166,7 +1168,6 @@
                 pauseBtn.textContent = "⏸ Pause";
                 miniPauseBtn.textContent = "⏸";
                 miniPauseBtn.disabled = true;
-                
                 prevBtn.disabled = true;
                 nextBtn.disabled = true;
                 miniPrevBtn.disabled = true;
@@ -1178,7 +1179,6 @@
                 pauseBtn.textContent = "⏸ Pause";
                 miniPauseBtn.textContent = "⏸";
                 miniPauseBtn.disabled = true;
-                
                 prevBtn.disabled = true;
                 nextBtn.disabled = true;
                 miniPrevBtn.disabled = true;
@@ -1201,11 +1201,10 @@
                 return;
             }
             totalCounter.textContent = sequence.length;
-            currentIndex = 0; // On recommence à zéro
+            currentIndex = 0; 
             previousStep = null; 
-            savedElapsed = 0; // Reset du temps sauvegardé quand on démarre
+            savedElapsed = 0; 
             
-            // Initialiser la durée en fonction de la première étape
             const firstStep = sequence[currentIndex];
             if (firstStep.prefix === '*') {
                 intervalTime = 5;
@@ -1230,9 +1229,7 @@
 
         function pauseAnimation() {
             if (intervalId) {
-                // Sauvegarder le temps écoulé AVANT de arrêter le tick
                 savedElapsed = (Date.now() - lastUpdateTime) / 1000;
-                
                 clearInterval(intervalId);
                 intervalId = null;
                 setButtonStates('paused');
@@ -1242,7 +1239,6 @@
         function continueAnimation() {
             if (!intervalId && sequence.length > 0) {
                 initAudio();
-                // Initialiser la durée en fonction de l'étape actuelle
                 const currentStep = sequence[currentIndex];
                 if (currentStep.prefix === '*') {
                     intervalTime = 5;
@@ -1259,15 +1255,12 @@
                     return;
                 }
                 
-                // Reprendre exactement là où on s'était arrêté
                 lastUpdateTime = Date.now() - (savedElapsed * 1000);
-                
                 intervalId = setInterval(tick, tickRate);
                 setButtonStates('playing');
             }
         }
 
-        // NOUVELLE FONCTION : Bascule entre Pause et Continuer
         function togglePauseContinue() {
             if (intervalId) {
                 pauseAnimation();
@@ -1281,7 +1274,7 @@
             initAudio();
             if (enableClick) playClickClick(); 
             currentIndex = (currentIndex - 1 + sequence.length) % sequence.length;
-            savedElapsed = 0; // Quand on change d'étape manuellement, on reset le timer de l'étape
+            savedElapsed = 0; 
             updateDisplay(); 
             lastUpdateTime = Date.now();
             if (intervalId) {
@@ -1295,7 +1288,7 @@
             initAudio();
             if (enableClick) playClickClick(); 
             currentIndex = (currentIndex + 1) % sequence.length;
-            savedElapsed = 0; // Quand on change d'étape manuellement, on reset le timer de l'étape
+            savedElapsed = 0;
             updateDisplay(); 
             lastUpdateTime = Date.now();
             if (intervalId) {
@@ -1305,8 +1298,6 @@
         }
 
         startBtn.addEventListener('click', startAnimation);
-        
-        // Le bouton Pause fait maintenant office de bascule (Toggle)
         pauseBtn.addEventListener('click', togglePauseContinue);
         miniPauseBtn.addEventListener('click', togglePauseContinue);
         
@@ -1317,40 +1308,22 @@
         miniStartBtn.addEventListener('click', startAnimation);
         miniNextBtn.addEventListener('click', stepForward);
 
-        fileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    sequenceInput.value = e.target.result;
-                    saveSettings();
-                    updateTotalCounter();
-                    location.reload(); 
-                };
-                reader.readAsText(file);
-            }
-        });
-
         raccourcisBtn.addEventListener('click', () => window.open('JSJ_MAIN.html', '_blank'));
         localisationBtn.addEventListener('click', () => window.open('jsj_26_verrous.html', '_blank'));
 
         // ==========================================
-        // 4. RACCOURCIS CLAVIER (Espace + Flèches)
+        // 4. RACCOURCIS CLAVIER
         // ==========================================
         document.addEventListener('keydown', (e) => {
-            // Si on tape dans une zone de texte, on ignore les raccourcis
             if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
                 return;
             }
 
             if (e.code === 'Space') {
                 e.preventDefault();
-                // Si un bouton a le focus (entouré), on l'enlève pour éviter de le déclencher deux fois
                 if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
                     document.activeElement.blur();
                 }
-                
-                // Logique de bascule
                 if (intervalId) {
                     pauseAnimation();
                 } else if (sequence.length > 0) {
