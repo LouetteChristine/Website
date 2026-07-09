@@ -1064,12 +1064,8 @@
             
             const currentStep = sequence[currentIndex];
             
-            // Déterminer la durée de l'étape actuelle
-            if (currentStep.prefix === '*') {
-                intervalTime = 5; // 5 secondes pour les étapes commençant par *
-            } else if (currentStep.prefix === '+') {
-                intervalTime = getIntervalSeconds(); // Intervalle par défaut pour +
-            } else if (isTextOnlyStep(currentStep)) {
+            // Déterminer la durée de l'étape actuelle (la règle des 5 secondes pour * a été supprimée)
+            if (isTextOnlyStep(currentStep)) {
                 intervalTime = 4; // 4 secondes pour les étapes textuelles sans préfixe
             } else {
                 let currentInputTime = getIntervalSeconds();
@@ -1099,8 +1095,8 @@
                     if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
                         // Fin de la séquence, on ne dit rien
                     } else {
-                        // On n'annonce pas en avance les étapes avec * ou +, ni le texte simple pour éviter les coupures
-                        if (!nextStep.prefix && !isTextOnlyStep(nextStep)) {
+                        // On n'annonce pas en avance les étapes avec * ou +, mais on lit le texte simple
+                        if (!nextStep.prefix) {
                             let textsToSpeak = getVoiceTexts(currentStep, nextStep);
                             if (textsToSpeak.length > 0) {
                                 speakTexts(textsToSpeak);
@@ -1195,13 +1191,9 @@
             previousStep = null; 
             savedElapsed = 0; // Reset du temps sauvegardé quand on démarre
             
-            // Initialiser la durée en fonction de la première étape
+            // Initialiser la durée en fonction de la première étape (la règle des 5 secondes pour * a été supprimée)
             const firstStep = sequence[currentIndex];
-            if (firstStep.prefix === '*') {
-                intervalTime = 5;
-            } else if (firstStep.prefix === '+') {
-                intervalTime = getIntervalSeconds();
-            } else if (isTextOnlyStep(firstStep)) {
+            if (isTextOnlyStep(firstStep)) {
                 intervalTime = 4;
             } else {
                 intervalTime = getIntervalSeconds();
@@ -1232,13 +1224,9 @@
         function continueAnimation() {
             if (!intervalId && sequence.length > 0) {
                 initAudio();
-                // Initialiser la durée en fonction de l'étape actuelle
+                // Initialiser la durée en fonction de l'étape actuelle (la règle des 5 secondes pour * a été supprimée)
                 const currentStep = sequence[currentIndex];
-                if (currentStep.prefix === '*') {
-                    intervalTime = 5;
-                } else if (currentStep.prefix === '+') {
-                    intervalTime = getIntervalSeconds();
-                } else if (isTextOnlyStep(currentStep)) {
+                if (isTextOnlyStep(currentStep)) {
                     intervalTime = 4;
                 } else {
                     intervalTime = getIntervalSeconds(); 
