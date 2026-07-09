@@ -342,6 +342,11 @@
             -webkit-text-size-adjust: 100%; /* Sécurité anti-réduction mobile */
         }
 
+        /* Classe pour rendre la valeur 0 transparente */
+        .hand-value-zero {
+            color: transparent !important;
+        }
+
         .hand-next {
             font-size: 2rem;
             font-weight: normal;
@@ -897,6 +902,8 @@ Flux de : droite
             progressBar.style.width = '0%';
             gaucheText.textContent = '-';
             droiteText.textContent = '-';
+            gaucheText.classList.remove('hand-value-zero');
+            droiteText.classList.remove('hand-value-zero');
             gaucheNext.textContent = '-';
             droiteNext.textContent = '-';
         });
@@ -1028,6 +1035,11 @@ Flux de : droite
 
             gaucheText.textContent = cleanForDisplay(step.gauche);
             droiteText.textContent = cleanForDisplay(step.droite);
+            
+            // Rendre la valeur "0" transparente si c'est le cas
+            gaucheText.classList.toggle('hand-value-zero', isValueZero(step.gauche));
+            droiteText.classList.toggle('hand-value-zero', isValueZero(step.droite));
+            
             stepCounter.textContent = (currentIndex + 1);
             
             let nextIndex = (currentIndex + 1) % sequence.length;
