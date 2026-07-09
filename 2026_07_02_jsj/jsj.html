@@ -111,11 +111,7 @@
         @media screen and (max-width: 600px) {
             /* Règles pour le mode Plein Écran sur mobile */
             body.fullscreen-active .display-area {
-                flex-direction: column;
                 gap: 20px;
-            }
-            body.fullscreen-active .hand-box {
-                width: 90%;
             }
             body.fullscreen-active .hand-value { 
                 font-size: 5rem; 
@@ -125,17 +121,11 @@
             }
             
             /* Règles générales pour mobile (hors plein écran) */
-            .display-area {
-                flex-direction: column; /* Main gauche au-dessus de Main droite */
-                gap: 15px;
-                align-items: center; /* Centre les hand-box pour la largeur de 90% */
-            }
             .hand-box {
-                width: 90%; /* Largeur de 90% sur GSM */
                 padding: 20px 10px;
             }
             .hand-value {
-                font-size: 2.975rem; /* Réduite à 85% de la taille mobile précédente (3.5rem * 0.85) */
+                font-size: 2.975rem; /* Réduite à 85% sur GSM */
             }
             .hand-next {
                 font-size: 1.5rem; /* Taille adaptée pour mobile */
@@ -316,21 +306,22 @@
 
         .display-area {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column; /* Toujours en colonne (Gauche au-dessus de Droite) */
+            justify-content: center;
+            align-items: center; /* Centre les boîtes (largeur 90%) */
             width: 100%;
             max-width: 800px;
             flex-grow: 1;
-            align-items: stretch; 
             margin: 20px 0;
-            gap: 20px; 
+            gap: 15px; 
         }
 
         .hand-box {
-            width: 45%;
+            width: 90%; /* Toujours 90% de largeur */
             background: white;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            padding: 40px 20px;
+            padding: 30px 20px;
             text-align: center;
             display: flex;
             flex-direction: column;
