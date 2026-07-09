@@ -445,15 +445,15 @@
             <button type="button" id="exportBtn">Exporter</button>
         </div>
 
-        <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">Le foie:
-Flux de : gauche
+        <textarea id="sequenceInput" rows="3" placeholder="Entrez vos valeurs ici (format: gauche : droite)">* Le foie
+* Flux de : gauche
 04 g : 22 d
 04 g : 14 d
 04 g : 01 g
 04 g : 05 g
 04 g : 18 g
 04 d : 18 g
-Flux de : droite
+* Flux de : droite
 22 g : 04 d
 14 g : 04 d
 01 d : 04 d
@@ -604,13 +604,37 @@ Flux de : droite
             for (let line of lines) {
                 if (line.trim() === '') continue; 
                 
+                let prefix = null;
+                let cleanLine = line.trim();
+
+                // Détection des préfixes * et +
+                if (cleanLine.startsWith('*')) {
+                    prefix = '*';
+                    cleanLine = cleanLine.substring(1).trim();
+                } else if (cleanLine.startsWith('+')) {
+                    prefix = '+';
+                    cleanLine = cleanLine.substring(1).trim();
+                }
+
                 // On sépare la ligne en deux parties
-                const parts = line.split(':');
-                // On s'assure d'avoir bien deux parties non vides pour pouvoir l'ajouter
-                if (parts.length === 2 && parts[0].trim() !== '' && parts[1].trim() !== '') {
+                const parts = cleanLine.split(':');
+                let gauche = "";
+                let droite = "";
+
+                if (parts.length >= 2) {
+                    gauche = parts[0].trim();
+                    droite = parts.slice(1).join(':').trim(); // Gérer s'il y a plusieurs ':'
+                } else if (prefix && parts.length === 1) {
+                    // S'il y a un préfixe mais pas de ':', on met tout dans la partie gauche
+                    gauche = parts[0].trim();
+                }
+
+                // On ajoute l'étape si elle a un préfixe ou si les deux parties sont remplies
+                if (prefix || (gauche !== '' && droite !== '')) {
                     parsedSeq.push({
-                        gauche: parts[0].trim(),
-                        droite: parts[1].trim()
+                        gauche: gauche,
+                        droite: droite,
+                        prefix: prefix
                     });
                 }
             }
@@ -740,10 +764,8 @@ Flux de : droite
 
             // Construire la phrase finale
             if (fingerName) {
-                // Ajout du raccourci à la fin : "4 droit, raccourci Annulaire"
                 return `${cleanedVal}, raccourci ${fingerName}`;
             } else {
-                // S'il n'y a pas de chiffre correspondant
                 return cleanedVal;
             }
         }
@@ -765,6 +787,28 @@ Flux de : droite
             let textsToSpeak = [];
             if (!oldStep || !newStep) return textsToSpeak;
 
+            // Gestion des lignes avec préfixe * ou +
+            if (newStep.prefix === '*' || newStep.prefix === '+') {
+                // Si c'est du texte pur, on le lit d'une seule traite
+                if (isTextOnlyStep(newStep)) {
+                    textsToSpeak.push((newStep.gauche + ' ' + newStep.droite).trim());
+                } else {
+                    // Si la ligne avec préfixe contient des chiffres, on respecte la logique Main Gauche/Droite
+                    let leftChanged = newStep.gauche !== oldStep.gauche;
+                    let rightChanged = newStep.droite !== oldStep.droite;
+                    if (!leftChanged && !rightChanged) {
+                        leftChanged = true; rightChanged = true; // Forcer la lecture si pas de changement
+                    }
+                    if (leftChanged && !isValueZero(newStep.gauche)) {
+                        textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
+                    }
+                    if (rightChanged && !isValueZero(newStep.droite)) {
+                        textsToSpeak.push("Main droite, " + formatSpokenValue(newStep.droite));
+                    }
+                }
+                return textsToSpeak;
+            }
+
             let leftChanged = newStep.gauche !== oldStep.gauche;
             let rightChanged = newStep.droite !== oldStep.droite;
 
@@ -773,20 +817,17 @@ Flux de : droite
             let leftHasDigit = /\d/.test(newStep.gauche);
             let rightHasDigit = /\d/.test(newStep.droite);
 
-            // Si aucune des deux zones n'a de chiffre
+            // "Supprime la règle pour les deux zones rouges qui ne contiennent pas de chiffre."
+            // Si aucune des deux zones n'a de chiffre et qu'il n'y a pas de préfixe, on ne lit plus rien.
             if (!leftHasDigit && !rightHasDigit) {
-                // On lit simplement le texte assemblé (ex: "Flux de gauche")
-                if (leftChanged || rightChanged) {
-                    textsToSpeak.push(`${newStep.gauche} ${newStep.droite}`);
-                }
-                return textsToSpeak;
+                return textsToSpeak; // RÈGLE SUPPRIMÉE ICI
             }
 
             // SINON : on prononce toutes les zones rouges (celles qui ont changé) SAUF si la valeur est 0
-            if (leftChanged && !isValueZero(newStep.gauche)) {
+            if (leftChanged && leftHasDigit && !isValueZero(newStep.gauche)) {
                 textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
             }
-            if (rightChanged && !isValueZero(newStep.droite)) {
+            if (rightChanged && rightHasDigit && !isValueZero(newStep.droite)) {
                 textsToSpeak.push("Main droite, " + formatSpokenValue(newStep.droite));
             }
 
@@ -797,7 +838,7 @@ Flux de : droite
         // 1. SCRIPT DE SAUVEGARDE (LocalStorage)
         // ==========================================
         
-        const defaultSequenceText = `Le foie\nFlux de : gauche\n04 g : 22 d\n04 g : 14 d\n04 g : 01 g\n04 g : 05 g\n04 g : 18 g\n04 d : 18 g\nFlux de : droite\n22 g : 04 d\n14 g : 04 d\n01 d : 04 d\n05 d : 04 d\n18 d : 04 d\n18 d : 04 g`;
+        const defaultSequenceText = `* Le foie\n* Flux de : gauche\n04 g : 22 d\n04 g : 14 d\n04 g : 01 g\n04 g : 05 g\n04 g : 18 g\n04 d : 18 g\n* Flux de : droite\n22 g : 04 d\n14 g : 04 d\n01 d : 04 d\n05 d : 04 d\n18 d : 04 d\n18 d : 04 g`;
 
         function saveSettings() {
             const settings = {
@@ -968,13 +1009,22 @@ Flux de : droite
             if (sequence.length === 0) return;
             const step = sequence[currentIndex];
             
-            if (isTextOnlyStep(step)) {
-                // Si c'est du texte seul, on le lit immédiatement
-                if (enableTTS) {
-                    speakTexts([`${step.gauche} ${step.droite}`]);
+            if (shouldSpeak && enableTTS) {
+                let textsToSpeak = [];
+                
+                // Les lignes avec préfixe * ou + sont lues immédiatement à l'affichage
+                if ((step.prefix === '*' || step.prefix === '+') && isTextOnlyStep(step)) {
+                    textsToSpeak.push((step.gauche + ' ' + step.droite).trim());
+                } else if (previousStep) {
+                    textsToSpeak = getVoiceTexts(previousStep, step);
+                } else if (isTextOnlyStep(step)) {
+                    // Règle supprimée : on ne lit plus les zones sans chiffre sans préfixe
+                } else {
+                    // Première étape avec des chiffres, on la lit
+                    if (/\d/.test(step.gauche) && !isValueZero(step.gauche)) textsToSpeak.push("Main gauche, " + formatSpokenValue(step.gauche));
+                    if (/\d/.test(step.droite) && !isValueZero(step.droite)) textsToSpeak.push("Main droite, " + formatSpokenValue(step.droite));
                 }
-            } else if (shouldSpeak && enableTTS && previousStep) {
-                let textsToSpeak = getVoiceTexts(previousStep, step);
+
                 if (textsToSpeak.length > 0) {
                     speakTexts(textsToSpeak);
                 }
@@ -1013,8 +1063,12 @@ Flux de : droite
             const currentStep = sequence[currentIndex];
             
             // Déterminer la durée de l'étape actuelle
-            if (isTextOnlyStep(currentStep)) {
-                intervalTime = 4; // 4 secondes pour les étapes textuelles
+            if (currentStep.prefix === '*') {
+                intervalTime = 5; // 5 secondes pour les étapes commençant par *
+            } else if (currentStep.prefix === '+') {
+                intervalTime = getIntervalSeconds(); // Intervalle par défaut pour +
+            } else if (isTextOnlyStep(currentStep)) {
+                intervalTime = 4; // 4 secondes pour les étapes textuelles sans préfixe
             } else {
                 let currentInputTime = getIntervalSeconds();
                 if (!isNaN(currentInputTime) && currentInputTime > 0) {
@@ -1043,9 +1097,8 @@ Flux de : droite
                     if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
                         // Fin de la séquence, on ne dit rien
                     } else {
-                        // Si la prochaine étape est textuelle, on ne l'annonce pas en avance 
-                        // pour éviter de la couper, elle sera annoncée à son affichage
-                        if (!isTextOnlyStep(nextStep)) {
+                        // On n'annonce pas en avance les étapes avec * ou +, ni le texte simple pour éviter les coupures
+                        if (!nextStep.prefix && !isTextOnlyStep(nextStep)) {
                             let textsToSpeak = getVoiceTexts(currentStep, nextStep);
                             if (textsToSpeak.length > 0) {
                                 speakTexts(textsToSpeak);
@@ -1072,28 +1125,28 @@ Flux de : droite
 
         function setButtonStates(state) {
             if (state === 'playing') {
-                startBtn.disabled = false; // Toujours actif
-                pauseBtn.disabled = false; // Toujours actif
-                pauseBtn.textContent = "⏸ Pause"; // Texte par défaut
+                startBtn.disabled = false; 
+                pauseBtn.disabled = false; 
+                pauseBtn.textContent = "⏸ Pause"; 
                 miniPauseBtn.textContent = "⏸";
                 miniPauseBtn.disabled = false;
                 
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
-                miniStartBtn.disabled = false; // Toujours actif
+                miniStartBtn.disabled = false; 
                 miniNextBtn.disabled = false;
             } else if (state === 'paused') {
-                startBtn.disabled = false; // Toujours actif
-                pauseBtn.disabled = false; // Toujours actif
-                pauseBtn.textContent = "⏵ Continuer"; // Change le texte pour indiquer l'action
+                startBtn.disabled = false; 
+                pauseBtn.disabled = false; 
+                pauseBtn.textContent = "⏵ Continuer"; 
                 miniPauseBtn.textContent = "▶";
                 miniPauseBtn.disabled = false;
                 
                 prevBtn.disabled = false;
                 nextBtn.disabled = false;
                 miniPrevBtn.disabled = false;
-                miniStartBtn.disabled = false; // Toujours actif
+                miniStartBtn.disabled = false; 
                 miniNextBtn.disabled = false;
             } else if (state === 'stopped') {
                 startBtn.disabled = false;
@@ -1141,7 +1194,12 @@ Flux de : droite
             savedElapsed = 0; // Reset du temps sauvegardé quand on démarre
             
             // Initialiser la durée en fonction de la première étape
-            if (isTextOnlyStep(sequence[currentIndex])) {
+            const firstStep = sequence[currentIndex];
+            if (firstStep.prefix === '*') {
+                intervalTime = 5;
+            } else if (firstStep.prefix === '+') {
+                intervalTime = getIntervalSeconds();
+            } else if (isTextOnlyStep(firstStep)) {
                 intervalTime = 4;
             } else {
                 intervalTime = getIntervalSeconds();
@@ -1172,8 +1230,13 @@ Flux de : droite
         function continueAnimation() {
             if (!intervalId && sequence.length > 0) {
                 initAudio();
-                // Initialiser la durée en fonction de l'étape actuelle (sans réinitialiser currentIndex)
-                if (isTextOnlyStep(sequence[currentIndex])) {
+                // Initialiser la durée en fonction de l'étape actuelle
+                const currentStep = sequence[currentIndex];
+                if (currentStep.prefix === '*') {
+                    intervalTime = 5;
+                } else if (currentStep.prefix === '+') {
+                    intervalTime = getIntervalSeconds();
+                } else if (isTextOnlyStep(currentStep)) {
                     intervalTime = 4;
                 } else {
                     intervalTime = getIntervalSeconds(); 
