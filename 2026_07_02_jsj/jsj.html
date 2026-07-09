@@ -126,16 +126,16 @@
             
             /* Règles générales pour mobile (hors plein écran) */
             .display-area {
-                flex-direction: column;
+                flex-direction: column; /* Main gauche au-dessus de Main droite */
                 gap: 15px;
-                align-items: center; /* Centre les hand-box pour qu'elles ne prennent que 90% */
+                align-items: center; /* Centre les hand-box pour la largeur de 90% */
             }
             .hand-box {
-                width: 90%; /* Prend 90% de la largeur comme en mode plein écran */
+                width: 90%; /* Largeur de 90% sur GSM */
                 padding: 20px 10px;
             }
             .hand-value {
-                font-size: 3.5rem; /* Taille adaptée pour mobile */
+                font-size: 2.975rem; /* Réduite à 85% de la taille mobile précédente (3.5rem * 0.85) */
             }
             .hand-next {
                 font-size: 1.5rem; /* Taille adaptée pour mobile */
