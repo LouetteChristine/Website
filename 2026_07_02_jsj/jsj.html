@@ -63,7 +63,6 @@
         body.fullscreen-active .hand-value { font-size: 7rem; }
         body.fullscreen-active .hand-next { font-size: 4rem; }
         
-        /* --- Affichage des infos basses en plein écran --- */
         body.fullscreen-active .bottom-info {
             max-width: 90vw;
             margin-top: 20px;
@@ -164,6 +163,7 @@
         .file-controls {
             display: flex;
             gap: 10px;
+            align-items: center;
         }
 
         .input-row {
@@ -437,6 +437,8 @@
     <div class="controls">
         
         <div class="file-controls">
+            <button type="button" id="raccourcisBtn">Raccourcis</button>
+            <button type="button" id="localisationBtn">Localisation</button>
             <label for="fileInput" class="import-btn">Importer</label>
             <input type="file" id="fileInput" accept=".txt">
             <button type="button" id="exportBtn">Exporter</button>
@@ -468,22 +470,20 @@ Flux de : droite
                 <label for="loopCheckbox">Boucle</label>
             </div>
 
-            <button type="button" id="fullscreenBtn">Plein Écran</button>
             <button type="button" id="clickBtn">🔊 Clic : Off</button>
             <button type="button" id="ttsBtn">🗣 Voix : Off</button>
             <select id="voiceSelect" title="Choisir une voix"></select>
             <label>Vitesse :</label>
             <input type="number" id="speedInput" value="0.8" min="0.5" max="2" step="0.1">
+            
+            <label>Volume :</label>
+            <input type="number" id="volumeInput" value="8" min="1" max="10">
 
             <div class="spacer"></div>
-
-            <div class="options-group">
-                <button type="button" id="raccourcisBtn">Raccourcis</button>
-                <button type="button" id="localisationBtn">Localisation</button>
-            </div>
         </div>
 
         <div class="playback-controls">
+            <button type="button" id="fullscreenBtn">Plein Écran</button>
             <button type="button" id="startBtn">▶ Démarrer</button>
             <button type="button" id="pauseBtn" disabled>⏸ Pause</button>
             <button type="button" id="prevBtn" disabled>⏮ Précédent</button>
@@ -562,6 +562,7 @@ Flux de : droite
         const totalCounter = document.getElementById('totalCounter');
         const minutesInput = document.getElementById('minutesInput');
         const secondsInput = document.getElementById('secondsInput');
+        const volumeInput = document.getElementById('volumeInput');
         const loopCheckbox = document.getElementById('loopCheckbox');
         
         const startBtn = document.getElementById('startBtn');
@@ -590,26 +591,17 @@ Flux de : droite
         const miniNextBtn = document.getElementById('miniNextBtn');
 
         // ==========================================
-        // FONCTIONS DE PARSE, FILTRE 100 ET MAJ COMPTEUR
+        // FONCTIONS DE PARSE ET MAJ COMPTEUR
         // ==========================================
         
         function cleanForDisplay(val) {
-            let cleaned = val.replace(/\b100\b/g, '');
-            cleaned = cleaned.replace(/\s+/g, ' ').trim();
+            let cleaned = val.replace(/\s+/g, ' ').trim();
             return cleaned || '-';
         }
 
-        function isValueSilent(val) {
-            let cleaned = val.replace(/\b100\b/g, '').trim();
-            if (cleaned === '' || cleaned === '-') return true; 
-            
-            // S'il y a un point, ce n'est pas silencieux (c'est une étape active)
-            if (/\./.test(cleaned)) return false;
-            
-            const match = cleaned.match(/\d+/); 
-            if (!match) return false; 
-            
-            return parseInt(match[0], 10) === 0;
+        function isValueZero(val) {
+            const match = val.match(/\d+/);
+            return match ? parseInt(match[0], 10) === 0 : false;
         }
 
         function parseSequenceInput(text) {
@@ -619,7 +611,7 @@ Flux de : droite
                 let trimmedLine = line.trim();
                 if (trimmedLine === '') continue; 
                 
-                // Nouvelle condition : ignorer les lignes commençant par *
+                // Ignorer les lignes commençant par *
                 if (trimmedLine.startsWith('*')) continue;
                 
                 const parts = line.split(':');
@@ -705,6 +697,7 @@ Flux de : droite
 
         voiceSelect.addEventListener('change', saveSettings);
         speedInput.addEventListener('input', saveSettings);
+        volumeInput.addEventListener('input', saveSettings);
 
         function speakTexts(texts) {
             if (!window.speechSynthesis || !enableTTS) return;
@@ -713,6 +706,7 @@ Flux de : droite
             const selectedVoiceIndex = voiceSelect.value;
             const selectedVoice = availableVoices[selectedVoiceIndex];
             const currentSpeed = parseFloat(speedInput.value) || 0.8;
+            const currentVolume = (parseInt(volumeInput.value) || 8) / 10; // Volume 1-10 converti en 0.1-1.0
 
             texts.forEach(t => {
                 const utterance = new SpeechSynthesisUtterance(t);
@@ -723,13 +717,13 @@ Flux de : droite
                     utterance.lang = 'fr-FR';
                 }
                 utterance.rate = currentSpeed; 
+                utterance.volume = currentVolume; // Applique le volume
                 window.speechSynthesis.speak(utterance);
             });
         }
 
         function formatSpokenValue(val) {
-            let cleanedVal = val.replace(/\b100\b/gi, '');
-            cleanedVal = cleanedVal.replace(/\b0(\d)\b/i, '$1');
+            let cleanedVal = val.replace(/\b0(\d)\b/i, '$1');
             cleanedVal = cleanedVal.replace(/\s+/g, ' ').trim();
 
             const match = cleanedVal.match(/\d+/);
@@ -760,17 +754,15 @@ Flux de : droite
             }
         }
 
-        // Vérifie si une étape ne contient aucun chiffre pertinent NI point (en ignorant 100)
+        // Vérifie si une étape ne contient aucun chiffre NI point "." 
         function isTextOnlyStep(step) {
             if (!step) return false;
-            let gClean = step.gauche.replace(/\b100\b/g, '').trim();
-            let dClean = step.droite.replace(/\b100\b/g, '').trim();
+            let gClean = step.gauche.trim();
+            let dClean = step.droite.trim();
             
-            // Un chiffre OU un point (.) dans l'une des zones
             let leftHasDigitOrDot = /(\d|\.)/.test(gClean);
             let rightHasDigitOrDot = /(\d|\.)/.test(dClean);
             
-            // C'est du texte seul si aucune des deux zones n'a de chiffre ni de point
             return !leftHasDigitOrDot && !rightHasDigitOrDot;
         }
 
@@ -783,24 +775,21 @@ Flux de : droite
 
             if (!leftChanged && !rightChanged) return textsToSpeak;
 
-            // Un chiffre OU un point (.) dans l'une des zones
-            let leftHasDigitOrDot = /(\d|\.)/.test(newStep.gauche.replace(/\b100\b/g, ''));
-            let rightHasDigitOrDot = /(\d|\.)/.test(newStep.droite.replace(/\b100\b/g, ''));
+            let leftHasDigitOrDot = /(\d|\.)/.test(newStep.gauche);
+            let rightHasDigitOrDot = /(\d|\.)/.test(newStep.droite);
 
-            // Si aucune des deux zones n'a de chiffre ni de point
             if (!leftHasDigitOrDot && !rightHasDigitOrDot) {
                 if (leftChanged || rightChanged) {
-                    let textToRead = `${newStep.gauche.replace(/\b100\b/g, '').trim()} ${newStep.droite.replace(/\b100\b/g, '').trim()}`.replace(/\s+/g, ' ').trim();
+                    let textToRead = `${newStep.gauche.trim()} ${newStep.droite.trim()}`.replace(/\s+/g, ' ').trim();
                     if(textToRead) textsToSpeak.push(textToRead);
                 }
                 return textsToSpeak;
             }
 
-            // SINON : on prononce toutes les zones qui ont changé SAUF si la valeur est silencieuse
-            if (leftChanged && !isValueSilent(newStep.gauche)) {
+            if (leftChanged && !isValueZero(newStep.gauche)) {
                 textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
             }
-            if (rightChanged && !isValueSilent(newStep.droite)) {
+            if (rightChanged && !isValueZero(newStep.droite)) {
                 textsToSpeak.push("Main droite, " + formatSpokenValue(newStep.droite));
             }
 
@@ -818,6 +807,7 @@ Flux de : droite
                 sequence: sequenceInput.value,
                 minutes: minutesInput.value,
                 seconds: secondsInput.value,
+                volume: volumeInput.value,
                 loop: loopCheckbox.checked,
                 click: enableClick,
                 tts: enableTTS,
@@ -834,6 +824,7 @@ Flux de : droite
                 sequenceInput.value = settings.sequence || defaultSequenceText;
                 minutesInput.value = settings.minutes !== undefined ? settings.minutes : 1;
                 secondsInput.value = settings.seconds !== undefined ? settings.seconds : 0;
+                volumeInput.value = settings.volume !== undefined ? settings.volume : 8;
                 loopCheckbox.checked = settings.loop !== undefined ? settings.loop : true;
                 
                 enableClick = settings.click || false;
@@ -941,12 +932,14 @@ Flux de : droite
 
         function playClickSound(time = 0) {
             if (!audioContext) return;
+            const currentVolume = (parseInt(volumeInput.value) || 8) / 10; // Volume 1-10 converti en 0.1-1.0
+            
             const osc = audioContext.createOscillator();
             const gain = audioContext.createGain();
             osc.connect(gain);
             gain.connect(audioContext.destination);
             osc.frequency.value = 1500; 
-            gain.gain.setValueAtTime(0.3, audioContext.currentTime + time);
+            gain.gain.setValueAtTime(currentVolume, audioContext.currentTime + time);
             gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + time + 0.05);
             osc.start(audioContext.currentTime + time);
             osc.stop(audioContext.currentTime + time + 0.05);
@@ -983,7 +976,7 @@ Flux de : droite
             
             if (isTextOnlyStep(step)) {
                 if (enableTTS) {
-                    let textToRead = `${step.gauche.replace(/\b100\b/g, '').trim()} ${step.droite.replace(/\b100\b/g, '').trim()}`.replace(/\s+/g, ' ').trim();
+                    let textToRead = `${step.gauche.trim()} ${step.droite.trim()}`.replace(/\s+/g, ' ').trim();
                     if(textToRead) speakTexts([textToRead]);
                 }
             } else if (shouldSpeak && enableTTS && previousStep) {
