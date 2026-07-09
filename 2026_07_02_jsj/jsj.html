@@ -109,12 +109,29 @@
         }
 
         @media screen and (max-width: 600px) {
+            /* Ajustement global pour le mobile afin d'utiliser 100% de la largeur */
+            body {
+                padding: 20px 0; /* On enlève le padding gauche/droite du body */
+            }
+            .controls, .display-area, .bottom-info {
+                width: 100%;
+                max-width: 100%;
+                border-radius: 0; /* Optionnel : pour un rendu "plein écran" de bord en bord */
+            }
+            .controls, .bottom-info {
+                padding-left: 15px;
+                padding-right: 15px;
+                box-sizing: border-box;
+            }
+
             body.fullscreen-active .display-area {
                 flex-direction: column;
                 gap: 20px;
+                width: 100%;
+                max-width: 100%;
             }
             body.fullscreen-active .hand-box {
-                width: 90%;
+                width: 100%; /* Passe de 90% à 100% */
             }
             body.fullscreen-active .hand-value { 
                 font-size: 5rem; 
@@ -127,10 +144,12 @@
             .display-area {
                 flex-direction: column;
                 gap: 15px;
+                margin: 15px 0;
             }
             .hand-box {
                 width: 100%;
                 padding: 20px 10px;
+                box-sizing: border-box;
             }
             .hand-value {
                 font-size: 3.5rem; /* Taille adaptée pour mobile */
