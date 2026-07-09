@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="fr">
-    
 <head>  
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,7 +31,7 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            display: none; /* Caché par défaut */
+            display: none; 
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             transition: background-color 0.2s;
         }
@@ -40,7 +39,7 @@
             background-color: #c82333;
         }
         body.fullscreen-active .exit-fullscreen-btn {
-            display: block; /* Affiché uniquement en plein écran */
+            display: block; 
         }
 
         /* --- Styles pour le mode Plein Écran --- */
@@ -261,7 +260,6 @@
         #prevBtn, #nextBtn { background-color: #6c757d; }
         #prevBtn:hover:not(:disabled), #nextBtn:hover:not(:disabled) { background-color: #5a6268; }
         
-        /* Styles des boutons Clic et Voix */
         #clickBtn { background-color: #6c757d; }
         #clickBtn:hover:not(.click-active) { background-color: #5a6268; }
         #clickBtn.click-active { background-color: #007bff; }
@@ -272,7 +270,6 @@
         #ttsBtn.tts-active { background-color: #e83e8c; }
         #ttsBtn.tts-active:hover { background-color: #d63384; }
 
-        /* Style pour le sélecteur de voix */
         #voiceSelect {
             padding: 8px;
             font-size: 16px;
@@ -435,7 +432,6 @@
 </head>
 <body>
 
-    <!-- Bouton flottant pour quitter le plein écran -->
     <button id="exitFullscreenBtn" class="exit-fullscreen-btn">✖ Quitter</button>
 
     <div class="controls">
@@ -550,16 +546,13 @@ Flux de : droite
         let audioContext = null;
         let clickWarningPlayed = false;
         
-        // Variables séparées pour le clic et la voix
         let enableClick = false;
         let enableTTS = false;
         let previousStep = null;
         let availableVoices = [];
         
-        // Variable pour sauvegarder le temps écoulé lors de la pause
         let savedElapsed = 0;
 
-        // Éléments DOM
         const gaucheText = document.getElementById('gaucheText');
         const droiteText = document.getElementById('droiteText');
         const gaucheNext = document.getElementById('gaucheNext');
@@ -600,20 +593,20 @@ Flux de : droite
         // FONCTIONS DE PARSE, FILTRE 100 ET MAJ COMPTEUR
         // ==========================================
         
-        // FONCTION pour nettoyer l'affichage (supprime 100 et formatte)
         function cleanForDisplay(val) {
             let cleaned = val.replace(/\b100\b/g, '');
             cleaned = cleaned.replace(/\s+/g, ' ').trim();
             return cleaned || '-';
         }
 
-        // NOUVELLE FONCTION : Vérifie si la valeur doit être tue (0, 100 seul, ou vide)
         function isValueSilent(val) {
             let cleaned = val.replace(/\b100\b/g, '').trim();
-            if (cleaned === '' || cleaned === '-') return true; // "100" seul ou vide -> on ne dit rien
+            if (cleaned === '' || cleaned === '-') return true; 
             
-            const match = cleaned.match(/\d+/); // On cherche les chiffres restants (s'il y en a)
-            // S'il n'y a pas de chiffre, ce n'est pas un "zéro", c'est du texte (ex: "g")
+            // S'il y a un point, ce n'est pas silencieux (c'est une étape active)
+            if (/\./.test(cleaned)) return false;
+            
+            const match = cleaned.match(/\d+/); 
             if (!match) return false; 
             
             return parseInt(match[0], 10) === 0;
@@ -623,11 +616,13 @@ Flux de : droite
             const lines = text.trim().split('\n');
             const parsedSeq = [];
             for (let line of lines) {
-                if (line.trim() === '') continue; 
+                let trimmedLine = line.trim();
+                if (trimmedLine === '') continue; 
                 
-                // On sépare la ligne en deux parties
+                // Nouvelle condition : ignorer les lignes commençant par *
+                if (trimmedLine.startsWith('*')) continue;
+                
                 const parts = line.split(':');
-                // On s'assure d'avoir bien deux parties pour pouvoir l'ajouter
                 if (parts.length === 2) {
                     let gauche = parts[0].trim();
                     let droite = parts[1].trim();
@@ -674,12 +669,10 @@ Flux de : droite
         function loadVoices() {
             if (!window.speechSynthesis) return;
             const allVoices = window.speechSynthesis.getVoices();
-            voiceSelect.innerHTML = ''; // Vider la liste actuelle
+            voiceSelect.innerHTML = ''; 
             
-            // Filtrer pour ne garder que les voix françaises
             availableVoices = allVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith('fr'));
 
-            // Si aucune voix française n'est trouvée
             if (availableVoices.length === 0) {
                 const option = document.createElement('option');
                 option.textContent = "Aucune voix FR trouvée";
@@ -696,7 +689,6 @@ Flux de : droite
                 voiceSelect.appendChild(option);
             });
 
-            // Restaurer la voix sauvegardée si elle existe
             const saved = localStorage.getItem('mainsGD_settings');
             if (saved) {
                 const settings = JSON.parse(saved);
@@ -720,7 +712,7 @@ Flux de : droite
             
             const selectedVoiceIndex = voiceSelect.value;
             const selectedVoice = availableVoices[selectedVoiceIndex];
-            const currentSpeed = parseFloat(speedInput.value) || 0.8; // Récupérer la vitesse choisie
+            const currentSpeed = parseFloat(speedInput.value) || 0.8;
 
             texts.forEach(t => {
                 const utterance = new SpeechSynthesisUtterance(t);
@@ -730,30 +722,22 @@ Flux de : droite
                 } else {
                     utterance.lang = 'fr-FR';
                 }
-                utterance.rate = currentSpeed; // Appliquer la vitesse
+                utterance.rate = currentSpeed; 
                 window.speechSynthesis.speak(utterance);
             });
         }
 
-        // FONCTION pour formater le texte (enlever 100, le 0 initial et convertir g/d)
         function formatSpokenValue(val) {
-            // Enlever 100 par sécurité
             let cleanedVal = val.replace(/\b100\b/gi, '');
-            
-            // Enlever le 0 initial (ex: "04" devient "4")
             cleanedVal = cleanedVal.replace(/\b0(\d)\b/i, '$1');
-            
-            // Nettoyer les espaces multiples
             cleanedVal = cleanedVal.replace(/\s+/g, ' ').trim();
 
-            // Extraire le chiffre pour vérifier à quel doigt il correspond
             const match = cleanedVal.match(/\d+/);
             let fingerName = "";
 
             if (match) {
                 const num = parseInt(match[0], 10);
                 
-                // Associer le chiffre au nom du doigt
                 if ([1, 16, 9, 19, 21].includes(num)) {
                     fingerName = "Pouce";
                 } else if ([5, 6, 10, 11, 22].includes(num)) {
@@ -767,10 +751,8 @@ Flux de : droite
                 }
             }
 
-            // Remplacer g/d par gauche/droit
             cleanedVal = cleanedVal.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit');
 
-            // Construire la phrase finale
             if (fingerName) {
                 return `${cleanedVal}, raccourci ${fingerName}`;
             } else {
@@ -778,15 +760,20 @@ Flux de : droite
             }
         }
 
-        // Vérifie si une étape ne contient aucun chiffre pertinent (en ignorant 100)
+        // Vérifie si une étape ne contient aucun chiffre pertinent NI point (en ignorant 100)
         function isTextOnlyStep(step) {
             if (!step) return false;
             let gClean = step.gauche.replace(/\b100\b/g, '').trim();
             let dClean = step.droite.replace(/\b100\b/g, '').trim();
-            return !/\d/.test(gClean) && !/\d/.test(dClean);
+            
+            // Un chiffre OU un point (.) dans l'une des zones
+            let leftHasDigitOrDot = /(\d|\.)/.test(gClean);
+            let rightHasDigitOrDot = /(\d|\.)/.test(dClean);
+            
+            // C'est du texte seul si aucune des deux zones n'a de chiffre ni de point
+            return !leftHasDigitOrDot && !rightHasDigitOrDot;
         }
 
-        // FONCTION pour calculer exactement ce qui doit être dit
         function getVoiceTexts(oldStep, newStep) {
             let textsToSpeak = [];
             if (!oldStep || !newStep) return textsToSpeak;
@@ -796,12 +783,12 @@ Flux de : droite
 
             if (!leftChanged && !rightChanged) return textsToSpeak;
 
-            let leftHasDigit = /\d/.test(newStep.gauche.replace(/\b100\b/g, ''));
-            let rightHasDigit = /\d/.test(newStep.droite.replace(/\b100\b/g, ''));
+            // Un chiffre OU un point (.) dans l'une des zones
+            let leftHasDigitOrDot = /(\d|\.)/.test(newStep.gauche.replace(/\b100\b/g, ''));
+            let rightHasDigitOrDot = /(\d|\.)/.test(newStep.droite.replace(/\b100\b/g, ''));
 
-            // Si aucune des deux zones n'a de chiffre
-            if (!leftHasDigit && !rightHasDigit) {
-                // On lit simplement le texte assemblé (ex: "Flux de gauche")
+            // Si aucune des deux zones n'a de chiffre ni de point
+            if (!leftHasDigitOrDot && !rightHasDigitOrDot) {
                 if (leftChanged || rightChanged) {
                     let textToRead = `${newStep.gauche.replace(/\b100\b/g, '').trim()} ${newStep.droite.replace(/\b100\b/g, '').trim()}`.replace(/\s+/g, ' ').trim();
                     if(textToRead) textsToSpeak.push(textToRead);
@@ -809,7 +796,7 @@ Flux de : droite
                 return textsToSpeak;
             }
 
-            // SINON : on prononce toutes les zones rouges (celles qui ont changé) SAUF si la valeur est silencieuse (0 ou 100 seul)
+            // SINON : on prononce toutes les zones qui ont changé SAUF si la valeur est silencieuse
             if (leftChanged && !isValueSilent(newStep.gauche)) {
                 textsToSpeak.push("Main gauche, " + formatSpokenValue(newStep.gauche));
             }
@@ -863,7 +850,6 @@ Flux de : droite
             }
         }
 
-        // Si on modifie le texte, on remet à zéro l'animation en cours
         sequenceInput.addEventListener('input', () => {
             saveSettings();
             updateTotalCounter();
@@ -874,7 +860,7 @@ Flux de : droite
             }
             sequence = [];
             previousStep = null;
-            savedElapsed = 0; // Reset du temps sauvegardé
+            savedElapsed = 0; 
             setButtonStates('stopped');
             stepCounter.textContent = '0';
             countdownVal.textContent = formatTime(getIntervalSeconds() || 0);
@@ -996,7 +982,6 @@ Flux de : droite
             const step = sequence[currentIndex];
             
             if (isTextOnlyStep(step)) {
-                // Si c'est du texte seul, on le lit immédiatement
                 if (enableTTS) {
                     let textToRead = `${step.gauche.replace(/\b100\b/g, '').trim()} ${step.droite.replace(/\b100\b/g, '').trim()}`.replace(/\s+/g, ' ').trim();
                     if(textToRead) speakTexts([textToRead]);
@@ -1009,7 +994,6 @@ Flux de : droite
             }
             previousStep = step; 
 
-            // Affichage sans le "100"
             gaucheText.textContent = cleanForDisplay(step.gauche);
             droiteText.textContent = cleanForDisplay(step.droite);
             stepCounter.textContent = (currentIndex + 1);
@@ -1031,7 +1015,6 @@ Flux de : droite
                 gaucheNext.textContent = dispNextGauche;
                 droiteNext.textContent = dispNextDroite;
                 
-                // Comparaison visuelle pour la couleur rouge (changée)
                 if (dispNextGauche !== dispGauche) gaucheNext.classList.add('changed');
                 else gaucheNext.classList.remove('changed');
 
@@ -1047,9 +1030,8 @@ Flux de : droite
             
             const currentStep = sequence[currentIndex];
             
-            // Déterminer la durée de l'étape actuelle
             if (isTextOnlyStep(currentStep)) {
-                intervalTime = 4; // 4 secondes pour les étapes textuelles
+                intervalTime = 4; 
             } else {
                 let currentInputTime = getIntervalSeconds();
                 if (!isNaN(currentInputTime) && currentInputTime > 0) {
@@ -1062,7 +1044,6 @@ Flux de : droite
             const progressPercent = (elapsed / intervalTime) * 100;
             progressBar.style.width = Math.min(100, progressPercent) + '%';
 
-            // Avertir 5s avant la fin, ou la moitié du temps si le temps est court
             const warningTime = intervalTime > 5 ? 5.0 : Math.max(0.5, intervalTime / 2);
 
             if (remaining <= warningTime && remaining > 0 && !clickWarningPlayed) {
@@ -1076,10 +1057,8 @@ Flux de : droite
                     const nextStep = sequence[nextIdx];
                     
                     if (!loopCheckbox.checked && currentIndex === sequence.length - 1) {
-                        // Fin de la séquence, on ne dit rien
+                        // Fin de la séquence
                     } else {
-                        // Si la prochaine étape est textuelle, on ne l'annonce pas en avance 
-                        // pour éviter de la couper, elle sera annoncée à son affichage
                         if (!isTextOnlyStep(nextStep)) {
                             let textsToSpeak = getVoiceTexts(currentStep, nextStep);
                             if (textsToSpeak.length > 0) {
@@ -1095,7 +1074,7 @@ Flux de : droite
                     clearInterval(intervalId);
                     intervalId = null;
                     setButtonStates('stopped');
-                    playEndClicks(); // Lance les 5 clics de fin
+                    playEndClicks(); 
                     return;
                 }
 
@@ -1171,11 +1150,10 @@ Flux de : droite
                 return;
             }
             totalCounter.textContent = sequence.length;
-            currentIndex = 0; // On recommence à zéro
+            currentIndex = 0; 
             previousStep = null; 
-            savedElapsed = 0; // Reset du temps sauvegardé quand on démarre
+            savedElapsed = 0; 
             
-            // Initialiser la durée en fonction de la première étape
             if (isTextOnlyStep(sequence[currentIndex])) {
                 intervalTime = 4;
             } else {
@@ -1195,7 +1173,6 @@ Flux de : droite
 
         function pauseAnimation() {
             if (intervalId) {
-                // Sauvegarder le temps écoulé AVANT de arrêter le tick
                 savedElapsed = (Date.now() - lastUpdateTime) / 1000;
                 
                 clearInterval(intervalId);
@@ -1207,7 +1184,6 @@ Flux de : droite
         function continueAnimation() {
             if (!intervalId && sequence.length > 0) {
                 initAudio();
-                // Initialiser la durée en fonction de l'étape actuelle (sans réinitialiser currentIndex)
                 if (isTextOnlyStep(sequence[currentIndex])) {
                     intervalTime = 4;
                 } else {
@@ -1219,7 +1195,6 @@ Flux de : droite
                     return;
                 }
                 
-                // Reprendre exactement là où on s'était arrêté
                 lastUpdateTime = Date.now() - (savedElapsed * 1000);
                 
                 intervalId = setInterval(tick, tickRate);
@@ -1227,7 +1202,6 @@ Flux de : droite
             }
         }
 
-        // NOUVELLE FONCTION : Bascule entre Pause et Continuer
         function togglePauseContinue() {
             if (intervalId) {
                 pauseAnimation();
@@ -1241,7 +1215,7 @@ Flux de : droite
             initAudio();
             if (enableClick) playClickClick(); 
             currentIndex = (currentIndex - 1 + sequence.length) % sequence.length;
-            savedElapsed = 0; // Quand on change d'étape manuellement, on reset le timer de l'étape
+            savedElapsed = 0; 
             updateDisplay(); 
             lastUpdateTime = Date.now();
             if (intervalId) {
@@ -1255,7 +1229,7 @@ Flux de : droite
             initAudio();
             if (enableClick) playClickClick(); 
             currentIndex = (currentIndex + 1) % sequence.length;
-            savedElapsed = 0; // Quand on change d'étape manuellement, on reset le timer de l'étape
+            savedElapsed = 0; 
             updateDisplay(); 
             lastUpdateTime = Date.now();
             if (intervalId) {
@@ -1266,7 +1240,6 @@ Flux de : droite
 
         startBtn.addEventListener('click', startAnimation);
         
-        // Le bouton Pause fait maintenant office de bascule (Toggle)
         pauseBtn.addEventListener('click', togglePauseContinue);
         miniPauseBtn.addEventListener('click', togglePauseContinue);
         
@@ -1295,22 +1268,19 @@ Flux de : droite
         localisationBtn.addEventListener('click', () => window.open('jsj_26_verrous.html', '_blank'));
 
         // ==========================================
-        // 4. RACCOURCIS CLAVIER (Espace + Flèches)
+        // 4. RACCOURCIS CLAVIER
         // ==========================================
         document.addEventListener('keydown', (e) => {
-            // Si on tape dans une zone de texte, on ignore les raccourcis
             if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
                 return;
             }
 
             if (e.code === 'Space') {
                 e.preventDefault();
-                // Si un bouton a le focus (entouré), on l'enlève pour éviter de le déclencher deux fois
                 if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
                     document.activeElement.blur();
                 }
                 
-                // Logique de bascule
                 if (intervalId) {
                     pauseAnimation();
                 } else if (sequence.length > 0) {
