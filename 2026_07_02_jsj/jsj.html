@@ -63,7 +63,9 @@
         }
         body.fullscreen-active .hand-title { color: #aaa; }
         body.fullscreen-active .hand-value { font-size: 7rem; }
+        body.fullscreen-active .hand-shortcut { font-size: 2.5rem; color: #aaa; }
         body.fullscreen-active .hand-next { font-size: 4rem; }
+        body.fullscreen-active .hand-next-shortcut { font-size: 1.5rem; color: #777; }
         
         body.fullscreen-active .bottom-info {
             max-width: 90vw;
@@ -116,8 +118,14 @@
             body.fullscreen-active .hand-value { 
                 font-size: 5rem; 
             }
+            body.fullscreen-active .hand-shortcut {
+                font-size: 1.5rem;
+            }
             body.fullscreen-active .hand-next { 
                 font-size: 2rem; 
+            }
+            body.fullscreen-active .hand-next-shortcut {
+                font-size: 1rem;
             }
             
             /* Règles générales pour mobile (hors plein écran) */
@@ -127,8 +135,14 @@
             .hand-value {
                 font-size: 2.975rem; /* Réduite à 85% sur GSM */
             }
+            .hand-shortcut {
+                font-size: 1rem;
+            }
             .hand-next {
                 font-size: 1.5rem; /* Taille adaptée pour mobile */
+            }
+            .hand-next-shortcut {
+                font-size: 0.9rem;
             }
             
             .file-controls {
@@ -347,6 +361,15 @@
             color: transparent !important;
         }
 
+        /* NOUVEAU : Style pour le raccourci affiché */
+        .hand-shortcut {
+            font-size: 1.2rem;
+            font-weight: normal;
+            color: #666;
+            margin-top: 5px;
+            min-height: 1.5rem;
+        }
+
         .hand-next {
             font-size: 2rem;
             font-weight: normal;
@@ -355,6 +378,14 @@
             min-height: 2.5rem;
             transition: color 0.3s;
             -webkit-text-size-adjust: 100%; /* Sécurité anti-réduction mobile */
+        }
+
+        /* NOUVEAU : Style pour le raccourci affiché de la main suivante */
+        .hand-next-shortcut {
+            font-size: 1rem;
+            color: #bbb;
+            min-height: 1.2rem;
+            margin-top: 5px;
         }
 
         .hand-next.changed {
@@ -535,13 +566,17 @@ Flux de : droite
         <div class="hand-box">
             <div class="hand-title">Main gauche</div>
             <div class="hand-value" id="gaucheText">-</div>
+            <div class="hand-shortcut" id="gaucheShortcut"></div> <!-- NOUVEL ELEMENT -->
             <div class="hand-next" id="gaucheNext">-</div>
+            <div class="hand-next-shortcut" id="gaucheNextShortcut"></div> <!-- NOUVEL ELEMENT -->
         </div>
 
         <div class="hand-box">
             <div class="hand-title">Main droite</div>
             <div class="hand-value" id="droiteText">-</div>
+            <div class="hand-shortcut" id="droiteShortcut"></div> <!-- NOUVEL ELEMENT -->
             <div class="hand-next" id="droiteNext">-</div>
+            <div class="hand-next-shortcut" id="droiteNextShortcut"></div> <!-- NOUVEL ELEMENT -->
         </div>
     </div>
 
@@ -597,6 +632,12 @@ Flux de : droite
         const droiteText = document.getElementById('droiteText');
         const gaucheNext = document.getElementById('gaucheNext');
         const droiteNext = document.getElementById('droiteNext');
+        
+        // NOUVELLES REFERENCES POUR L'AFFICHAGE VISUEL DES RACCOURCIS
+        const gaucheShortcut = document.getElementById('gaucheShortcut');
+        const droiteShortcut = document.getElementById('droiteShortcut');
+        const gaucheNextShortcut = document.getElementById('gaucheNextShortcut');
+        const droiteNextShortcut = document.getElementById('droiteNextShortcut');
         
         const stepCounter = document.getElementById('stepCounter');
         const totalCounter = document.getElementById('totalCounter');
@@ -760,21 +801,25 @@ Flux de : droite
             });
         }
 
+        // NOUVELLE FONCTION : Extrait le nom du doigt pour s'en servir visuellement et oralement
+        function getFingerName(val) {
+            const match = val.match(/\d+/);
+            if (match) {
+                const num = parseInt(match[0], 10);
+                if ([1, 16, 9, 19, 21].includes(num)) return "Pouce";
+                else if ([5, 6, 10, 11, 22].includes(num)) return "Index";
+                else if ([6, 25, 3, 12, 13].includes(num)) return "Majeur";
+                else if ([7, 2, 17, 4, 14].includes(num)) return "Annulaire";
+                else if ([24, 23, 18, 20, 15].includes(num)) return "Auriculaire";
+            }
+            return "";
+        }
+
         function formatSpokenValue(val) {
             let cleanedVal = val.replace(/\b0(\d)\b/i, '$1');
             cleanedVal = cleanedVal.replace(/\s+/g, ' ').trim();
 
-            const match = cleanedVal.match(/\d+/);
-            let fingerName = "";
-
-            if (match) {
-                const num = parseInt(match[0], 10);
-                if ([1, 16, 9, 19, 21].includes(num)) fingerName = "Pouce";
-                else if ([5, 6, 10, 11, 22].includes(num)) fingerName = "Index";
-                else if ([6, 25, 3, 12, 13].includes(num)) fingerName = "Majeur";
-                else if ([7, 2, 17, 4, 14].includes(num)) fingerName = "Annulaire";
-                else if ([24, 23, 18, 20, 15].includes(num)) fingerName = "Auriculaire";
-            }
+            let fingerName = getFingerName(val); // Utilise la fonction commune
 
             cleanedVal = cleanedVal.replace(/\bg\b/i, 'gauche').replace(/\bd\b/i, 'droit');
 
@@ -908,6 +953,12 @@ Flux de : droite
             droiteNext.textContent = '-';
             gaucheNext.classList.remove('hand-value-zero');
             droiteNext.classList.remove('hand-value-zero');
+            
+            // Nettoyer les raccourcis affichés
+            gaucheShortcut.textContent = '';
+            droiteShortcut.textContent = '';
+            gaucheNextShortcut.textContent = '';
+            droiteNextShortcut.textContent = '';
         });
         
         minutesInput.addEventListener('input', saveSettings);
@@ -1042,6 +1093,12 @@ Flux de : droite
             gaucheText.classList.toggle('hand-value-zero', isValueZero(step.gauche));
             droiteText.classList.toggle('hand-value-zero', isValueZero(step.droite));
             
+            // NOUVEAU : Mettre à jour l'affichage visuel du raccourci
+            const gFinger = getFingerName(step.gauche);
+            const dFinger = getFingerName(step.droite);
+            gaucheShortcut.textContent = gFinger ? `raccourci ${gFinger}` : '';
+            droiteShortcut.textContent = dFinger ? `raccourci ${dFinger}` : '';
+            
             stepCounter.textContent = (currentIndex + 1);
             
             let nextIndex = (currentIndex + 1) % sequence.length;
@@ -1053,6 +1110,10 @@ Flux de : droite
                 droiteNext.classList.remove('changed');
                 gaucheNext.classList.remove('hand-value-zero');
                 droiteNext.classList.remove('hand-value-zero');
+                
+                // Effacer les raccourcis de la main suivante
+                gaucheNextShortcut.textContent = '';
+                droiteNextShortcut.textContent = '';
             } else {
                 const nextStep = sequence[nextIndex];
                 const dispGauche = cleanForDisplay(step.gauche);
@@ -1066,6 +1127,12 @@ Flux de : droite
                 // Rendre la prochaine valeur "0" transparente si c'est le cas
                 gaucheNext.classList.toggle('hand-value-zero', isValueZero(nextStep.gauche));
                 droiteNext.classList.toggle('hand-value-zero', isValueZero(nextStep.droite));
+                
+                // NOUVEAU : Mettre à jour l'affichage visuel du raccourci pour la main suivante
+                const nextGFinger = getFingerName(nextStep.gauche);
+                const nextDFinger = getFingerName(nextStep.droite);
+                gaucheNextShortcut.textContent = nextGFinger ? `raccourci ${nextGFinger}` : '';
+                droiteNextShortcut.textContent = nextDFinger ? `raccourci ${nextDFinger}` : '';
                 
                 if (dispNextGauche !== dispGauche) gaucheNext.classList.add('changed');
                 else gaucheNext.classList.remove('changed');
