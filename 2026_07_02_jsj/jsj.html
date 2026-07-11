@@ -512,6 +512,7 @@
                 <label for="fileInput" class="import-btn">Importer</label>
                 <input type="file" id="fileInput" accept=".txt">
                 <button type="button" id="exportBtn">Exporter</button>
+                <button type="button" id="resetBtn">Reset</button>
             </div>
         </div>
 
@@ -655,6 +656,7 @@ Flux de : droite
         const progressBar = document.getElementById('progressBar');
         const fileInput = document.getElementById('fileInput');
         const exportBtn = document.getElementById('exportBtn');
+        const resetBtn = document.getElementById('resetBtn');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
         const exitFullscreenBtn = document.getElementById('exitFullscreenBtn');
         
@@ -990,7 +992,22 @@ Flux de : droite
         });
 
         // ==========================================
-        // 3. PLEIN ÉCRAN
+        // 3. BOUTON RESET
+        // ==========================================
+        resetBtn.addEventListener('click', () => {
+            // Génère un tableau de 20 lignes contenant '0 : 0' et les joint avec des sauts de ligne
+            const resetContent = Array(20).fill('0 : 0').join('\n');
+            
+            // Remplace le contenu de la zone de texte
+            sequenceInput.value = resetContent;
+            
+            // Déclenche manuellement l'événement 'input' pour que l'application
+            // réinitialise les compteurs, sauvegarde les paramètres et vide l'affichage
+            sequenceInput.dispatchEvent(new Event('input'));
+        });
+
+        // ==========================================
+        // 4. PLEIN ÉCRAN
         // ==========================================
         function enterFullscreen() {
             if (!document.fullscreenElement) {
@@ -1368,7 +1385,7 @@ Flux de : droite
             
             currentIndex = (currentIndex + 1) % sequence.length;
             savedElapsed = 0; 
-            updateDisplay(); 
+            updateDisplay(true); 
             lastUpdateTime = Date.now();
             if (intervalId) {
                 clearInterval(intervalId);
@@ -1376,71 +1393,53 @@ Flux de : droite
             }
         }
 
+        // ==========================================
+        // ÉCOUTEURS D'ÉVÉNEMENTS (Boutons et Clavier)
+        // ==========================================
         startBtn.addEventListener('click', startAnimation);
+        miniStartBtn.addEventListener('click', startAnimation);
         
         pauseBtn.addEventListener('click', togglePauseContinue);
         miniPauseBtn.addEventListener('click', togglePauseContinue);
         
         prevBtn.addEventListener('click', stepBack);
-        nextBtn.addEventListener('click', stepForward);
-        
         miniPrevBtn.addEventListener('click', stepBack);
-        miniStartBtn.addEventListener('click', startAnimation);
+        
+        nextBtn.addEventListener('click', stepForward);
         miniNextBtn.addEventListener('click', stepForward);
 
-        fileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    sequenceInput.value = e.target.result;
-                    saveSettings();
-                    updateTotalCounter();
-                    location.reload(); 
-                };
-                reader.readAsText(file);
-            }
-        });
-
-        raccourcisBtn.addEventListener('click', () => window.open('JSJ_MAIN.html', '_blank'));
-        localisationBtn.addEventListener('click', () => window.open('jsj_26_verrous.html', '_blank'));
-
-        // ==========================================
-        // 4. RACCOURCIS CLAVIER
-        // ==========================================
+        // Raccourcis clavier
         document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
-                return;
-            }
+            // Ne pas déclencher si l'utilisateur tape dans le textarea ou un input
+            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
 
             if (e.code === 'Space') {
                 e.preventDefault();
-                if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
-                    document.activeElement.blur();
-                }
-                
-                if (intervalId) {
-                    pauseAnimation();
-                } else if (sequence.length > 0) {
-                    continueAnimation();
-                } else {
+                if (sequence.length === 0) {
                     startAnimation();
+                } else {
+                    togglePauseContinue();
                 }
-            }
-            else if (e.code === 'ArrowLeft') {
+            } else if (e.code === 'ArrowLeft') {
                 e.preventDefault();
-                if (!prevBtn.disabled) stepBack();
-            }
-            else if (e.code === 'ArrowRight') {
+                stepBack();
+            } else if (e.code === 'ArrowRight') {
                 e.preventDefault();
-                if (!nextBtn.disabled) stepForward();
-            }
-            else if (e.code === 'Escape') {
-                if (document.fullscreenElement) {
-                    exitFullscreen();
-                }
+                stepForward();
+            } else if (e.code === 'Escape') {
+                if (document.fullscreenElement) exitFullscreen();
             }
         });
+
+        // Actions des boutons Raccourcis et Localisation (à adapter selon tes besoins)
+        raccourcisBtn.addEventListener('click', () => {
+            alert("Raccourcis clavier :\nEspace : Pause/Continuer\nFlèche Gauche : Précédent\nFlèche Droite : Suivant\nÉchap : Quitter le plein écran");
+        });
+
+        localisationBtn.addEventListener('click', () => {
+            alert("Fonctionnalité de localisation à définir.\n(Masquer/Afficher les infos cerveau/organes ?)");
+        });
+
     </script>
 </body>
 </html>
