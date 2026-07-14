@@ -513,6 +513,7 @@
                 <input type="file" id="fileInput" accept=".txt">
                 <button type="button" id="exportBtn">Exporter</button>
                 <button type="button" id="resetBtn">Reset</button>
+                <button type="button" id="infoBtn">Info</button> <!-- NOUVEAU BOUTON INFO -->
             </div>
         </div>
 
@@ -667,6 +668,7 @@ Flux de : droite
         
         const raccourcisBtn = document.getElementById('raccourcisBtn');
         const localisationBtn = document.getElementById('localisationBtn');
+        const infoBtn = document.getElementById('infoBtn'); // NOUVELLE REFERENCE
         
         const miniPrevBtn = document.getElementById('miniPrevBtn');
         const miniStartBtn = document.getElementById('miniStartBtn');
@@ -1415,14 +1417,18 @@ Flux de : droite
         miniNextBtn.addEventListener('click', () => goToStep(currentIndex + 1));
 
         // ==========================================
-        // ÉCOUTEURS POUR LES BOUTONS RACCOURCIS ET LOCALISATION
+        // ÉCOUTEURS POUR LES BOUTONS RACCOURCIS, LOCALISATION ET INFO
         // ==========================================
         raccourcisBtn.addEventListener('click', () => {
-            window.open('https://github.com/LouetteChristine/Website/tree/main/2026_07_02_jsj#:~:text=JSJ%5FMAIN%2Ehtml', '_blank');
+            window.open('https://louettechristine.github.io/Website/2026_07_02_jsj/JSJ_MAIN.html', '_blank');
         });
 
         localisationBtn.addEventListener('click', () => {
-            window.open('https://github.com/LouetteChristine/Website/tree/main/2026_07_02_jsj#:~:text=JSJ%5FMAIN%2Ehtml', '_blank');
+            window.open('https://louettechristine.github.io/Website/2026_07_02_jsj/jsj_26_verrous.html', '_blank');
+        });
+
+        infoBtn.addEventListener('click', () => {
+            window.open('https://louettechristine.github.io/Website/2026_07_02_jsj/info.html', '_blank');
         });
 
         // ==========================================
