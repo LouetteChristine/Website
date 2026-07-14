@@ -1,1 +1,589 @@
-ok
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>jsj.html — Guide de fonctionnement</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Manrope', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050505;
+            color: #e5e5e5;
+        }
+
+        ::selection {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #262626; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #404040; }
+
+        .grain {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            opacity: 0.04;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        .section-card {
+            background: rgba(23, 23, 23, 0.5);
+            border: 1px solid rgb(38, 38, 38);
+            border-radius: 12px;
+            transition: border-color 0.3s ease;
+        }
+
+        .section-card:hover {
+            border-color: rgb(64, 64, 64);
+        }
+
+        .tag {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #737373;
+        }
+
+        .icon-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: rgba(38, 38, 38, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.3s ease;
+        }
+
+        .section-card:hover .icon-box {
+            background: rgba(64, 64, 64, 0.5);
+        }
+
+        .rule-item {
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .rule-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #4ade80;
+        }
+
+        .rule-item.alt::before {
+            background: #f97316;
+        }
+
+        .rule-item.special::before {
+            background: #60a5fa;
+        }
+
+        .sub-rule {
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .sub-rule::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 6px;
+            height: 6px;
+            border-radius: 2px;
+            background: #a3a3a3;
+            transform: rotate(45deg);
+        }
+
+        .tip-banner {
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.08), rgba(74, 222, 128, 0.02));
+            border: 1px solid rgba(74, 222, 128, 0.15);
+            border-radius: 12px;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, #262626, #404040, #262626);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+
+    <!-- Grain overlay -->
+    <div class="grain"></div>
+
+    <!-- Decorative blurs -->
+    <div class="fixed top-0 right-0 w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="fixed bottom-0 left-0 w-[600px] h-[600px] bg-neutral-800/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+    <!-- Main content -->
+    <div class="relative z-10 max-w-screen-xl mx-auto px-6">
+
+        <!-- Header -->
+        <header class="pt-32 md:pt-48 pb-16 md:pb-24">
+            <p class="tag mb-6">Documentation</p>
+            <h1 class="font-heading text-4xl md:text-6xl lg:text-7xl font-medium tracking-tighter leading-[0.95]">
+                jsj.html
+            </h1>
+            <p class="mt-6 text-lg md:text-xl font-light text-neutral-400 max-w-2xl leading-relaxed">
+                Guide de fonctionnement complet — Raccourcis, encodage, chrono, voix et affichage.
+            </p>
+        </header>
+
+        <!-- Section 1 : Boutons principaux -->
+        <section class="pb-24">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- Raccourcis -->
+                <div class="section-card p-6 md:p-8">
+                    <div class="flex items-start gap-4">
+                        <div class="icon-box">
+                            <span class="iconify text-neutral-400" data-icon="lucide:hand" data-width="20"></span>
+                        </div>
+                        <div>
+                            <h3 class="font-heading text-lg font-medium tracking-tight text-white mb-2">Raccourcis</h3>
+                            <p class="text-sm text-neutral-400 leading-relaxed">
+                                Affiche dans une nouvelle fenêtre les raccourcis des verrous sur le dessin d'une main.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Localisation -->
+                <div class="section-card p-6 md:p-8">
+                    <div class="flex items-start gap-4">
+                        <div class="icon-box">
+                            <span class="iconify text-neutral-400" data-icon="lucide:map-pin" data-width="20"></span>
+                        </div>
+                        <div>
+                            <h3 class="font-heading text-lg font-medium tracking-tight text-white mb-2">Localisation</h3>
+                            <p class="text-sm text-neutral-400 leading-relaxed">
+                                Affiche dans une nouvelle fenêtre les emplacements des 26 verrous de sauvegarde de l'énergie.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Importer -->
+                <div class="section-card p-6 md:p-8">
+                    <div class="flex items-start gap-4">
+                        <div class="icon-box">
+                            <span class="iconify text-neutral-400" data-icon="lucide:upload" data-width="20"></span>
+                        </div>
+                        <div>
+                            <h3 class="font-heading text-lg font-medium tracking-tight text-white mb-2">Importer</h3>
+                            <p class="text-sm text-neutral-400 leading-relaxed">
+                                Permet d'importer un fichier au format texte <span class="text-neutral-300 font-medium">(txt)</span>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exporter -->
+                <div class="section-card p-6 md:p-8">
+                    <div class="flex items-start gap-4">
+                        <div class="icon-box">
+                            <span class="iconify text-neutral-400" data-icon="lucide:download" data-width="20"></span>
+                        </div>
+                        <div>
+                            <h3 class="font-heading text-lg font-medium tracking-tight text-white mb-2">Exporter</h3>
+                            <p class="text-sm text-neutral-400 leading-relaxed">
+                                Exporte la séquence dans le dossier <span class="text-neutral-300 font-medium">« Téléchargement »</span>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reset -->
+                <div class="section-card p-6 md:p-8 md:col-span-2">
+                    <div class="flex items-start gap-4">
+                        <div class="icon-box">
+                            <span class="iconify text-neutral-400" data-icon="lucide:rotate-ccw" data-width="20"></span>
+                        </div>
+                        <div>
+                            <h3 class="font-heading text-lg font-medium tracking-tight text-white mb-2">Reset</h3>
+                            <p class="text-sm text-neutral-400 leading-relaxed">
+                                Permet d'utiliser un chrono uniquement sur 20 lignes ou en boucle si la case est cochée.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Divider -->
+        <div class="divider"></div>
+
+        <!-- Section 2 : Encodage de séquence -->
+        <section class="py-24">
+            <p class="tag mb-4">Encodage</p>
+            <h2 class="font-heading text-3xl md:text-4xl font-medium tracking-tight text-white mb-4">
+                Zone modifiable
+            </h2>
+            <p class="text-lg font-light text-neutral-400 mb-12 max-w-2xl leading-relaxed">
+                Règles de lecture et d'interprétation des lignes dans la zone d'encodage de séquence.
+            </p>
+
+            <div class="section-card p-6 md:p-8 space-y-6">
+                <!-- Règle 1 -->
+                <div class="rule-item">
+                    <p class="text-sm md:text-base text-neutral-300 leading-relaxed">
+                        Si la ligne commence par <span class="inline-flex items-center justify-center w-6 h-6 rounded bg-neutral-800 text-white font-mono text-xs mx-1">*</span>, elle <span class="text-white font-medium">ne sera pas lue</span>.
+                    </p>
+                </div>
+
+                <!-- Règle 2 -->
+                <div class="rule-item">
+                    <p class="text-sm md:text-base text-neutral-300 leading-relaxed">
+                        Si la ligne comprend un <span class="text-green-400 font-medium">chiffre</span>, un raccourci doigt sera affiché et le chrono sera activé.
+                    </p>
+                </div>
+
+                <!-- Règle 3 -->
+                <div class="rule-item alt">
+                    <p class="text-sm md:text-base text-neutral-300 leading-relaxed mb-3">
+                        Si la ligne ne comprend pas de chiffre et que le chrono doit être activé :
+                    </p>
+                    <div class="space-y-3 ml-4">
+                        <div class="sub-rule">
+                            <p class="text-sm text-neutral-400 leading-relaxed">
+                                si <span class="inline-flex items-center justify-center w-5 h-5 rounded bg-neutral-800 text-white font-mono text-xs mx-1">:</span> dans la ligne → ajouter un <span class="text-orange-400 font-medium">point fin de ligne</span>
+                            </p>
+                        </div>
+                        <div class="sub-rule">
+                            <p class="text-sm text-neutral-400 leading-relaxed">
+                                si pas de chiffre et pas de <span class="font-mono text-xs">:</span> → ajouter <span class="text-orange-400 font-medium font-mono">:0</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Divider -->
+        <div class="divider"></div>
+
+        <!-- Section 3 : Options -->
+        <section class="py-24">
+            <p class="tag mb-4">Options</p>
+            <h2 class="font-heading text-3xl md:text-4xl font-medium tracking-tight text-white mb-12">
+                Paramètres de lecture
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                <!-- Durée -->
+                <div class="section-card p-6 md:p-8">
+                    <div class="icon-box mb-5">
+                        <span class="iconify text-neutral-400" data-icon="lucide:timer" data-width="20"></span>
+                    </div>
+                    <h3 class="font-heading text-lg font-medium tracking-tight text-white mb-2">Durée</h3>
+                    <p class="text-sm text-neutral-400 leading-relaxed">
+                        En minute et seconde pour le chrono.
+                    </p>
+                </div>
+
+                <!-- Boucle -->
+                <div class="section-card p-6 md:p-8">
+                    <div class="icon-box mb-5">
+                        <span class="iconify text-neutral-400" data-icon="lucide:repeat" data-width="20"></span>
+                    </div>
+                    <h3 class="font-heading text-lg font-medium tracking-tight text-white mb-2">Boucle</h3>
+                    <p class="text-sm text-neutral-400 leading-relaxed">
+                        Permet de boucler la séquence.
+                    </p>
+                </div>
+
+                <!-- Clic -->
+                <div class="section-card p-6 md:p-8">
+                    <div class="icon-box mb-5">
+                        <span class="iconify text-neutral-400" data-icon="lucide:volume-2" data-width="20"></span>
+                    </div>
+                    <h3 class="font-heading text-lg font-medium tracking-tight text-white mb-2">Clic</h3>
+                    <p class="text-sm text-neutral-400 leading-relaxed">
+                        Permet d'entendre un clic-clic 5 secondes avant le changement de ligne et 5 clics en fin de séquence.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Divider -->
+        <div class="divider"></div>
+
+        <!-- Section 4 : Voix -->
+        <section class="py-24">
+            <div class="section-card p-6 md:p-8">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="icon-box">
+                        <span class="iconify text-neutral-400" data-icon="lucide:mic" data-width="20"></span>
+                    </div>
+                    <div>
+                        <h3 class="font-heading text-2xl font-medium tracking-tight text-white mb-2">Voix</h3>
+                        <p class="text-sm text-neutral-400 leading-relaxed">
+                            Active une voix qui lit les changements et raccourcis s'il y en a.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                    <div class="bg-neutral-900/50 rounded-lg p-5 border border-neutral-800">
+                        <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-2">Qui lit</p>
+                        <p class="text-sm text-neutral-300 leading-relaxed">
+                            Définir qui lit <span class="text-neutral-500">(sur GSM moins de choix)</span>.
+                        </p>
+                    </div>
+                    <div class="bg-neutral-900/50 rounded-lg p-5 border border-neutral-800">
+                        <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-2">Vitesse</p>
+                        <p class="text-sm text-neutral-300 leading-relaxed">
+                            Réglage de la vitesse — valeur recommandée : <span class="text-green-400 font-mono font-medium">0.7</span>.
+                        </p>
+                    </div>
+                    <div class="bg-neutral-900/50 rounded-lg p-5 border border-neutral-800">
+                        <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-2">Volume</p>
+                        <p class="text-sm text-neutral-300 leading-relaxed">
+                            Réglage du volume de la voix.
+                        </p>
+                    </div>
+                </div>
+
+                <p class="mt-6 text-xs text-neutral-500 italic flex items-center gap-2">
+                    <span class="iconify" data-icon="lucide:info" data-width="14"></span>
+                    Suivant l'appareil que vous utilisez, certains paramètres peuvent ne pas fonctionner.
+                </p>
+            </div>
+        </section>
+
+        <!-- Divider -->
+        <div class="divider"></div>
+
+        <!-- Section 5 : Contrôles -->
+        <section class="py-24">
+            <p class="tag mb-4">Contrôles</p>
+            <h2 class="font-heading text-3xl md:text-4xl font-medium tracking-tight text-white mb-12">
+                Lecture & navigation
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                <!-- Plein écran -->
+                <div class="section-card p-6">
+                    <div class="icon-box mb-4">
+                        <span class="iconify text-neutral-400" data-icon="lucide:maximize" data-width="18"></span>
+                    </div>
+                    <h3 class="font-heading text-base font-medium tracking-tight text-white mb-2">Plein écran</h3>
+                    <p class="text-xs text-neutral-400 leading-relaxed">
+                        Bascule vers un plein écran sans les variables d'ajustement.
+                    </p>
+                </div>
+
+                <!-- Démarrer -->
+                <div class="section-card p-6">
+                    <div class="icon-box mb-4">
+                        <span class="iconify text-green-400" data-icon="lucide:play" data-width="18"></span>
+                    </div>
+                    <h3 class="font-heading text-base font-medium tracking-tight text-white mb-2">Démarrer</h3>
+                    <p class="text-xs text-neutral-400 leading-relaxed">
+                        Démarre la séquence.
+                    </p>
+                </div>
+
+                <!-- Pause / Continue -->
+                <div class="section-card p-6">
+                    <div class="icon-box mb-4">
+                        <span class="iconify text-neutral-400" data-icon="lucide:pause" data-width="18"></span>
+                    </div>
+                    <h3 class="font-heading text-base font-medium tracking-tight text-white mb-2">Pause / Continue</h3>
+                    <p class="text-xs text-neutral-400 leading-relaxed">
+                        Met en pause ou reprend la lecture.
+                    </p>
+                </div>
+
+                <!-- Précédent -->
+                <div class="section-card p-6">
+                    <div class="icon-box mb-4">
+                        <span class="iconify text-neutral-400" data-icon="lucide:skip-back" data-width="18"></span>
+                    </div>
+                    <h3 class="font-heading text-base font-medium tracking-tight text-white mb-2">Précédent</h3>
+                    <p class="text-xs text-neutral-400 leading-relaxed">
+                        Réentendre la ligne précédente rapidement.
+                    </p>
+                </div>
+
+                <!-- Suivant -->
+                <div class="section-card p-6">
+                    <div class="icon-box mb-4">
+                        <span class="iconify text-neutral-400" data-icon="lucide:skip-forward" data-width="18"></span>
+                    </div>
+                    <h3 class="font-heading text-base font-medium tracking-tight text-white mb-2">Suivant</h3>
+                    <p class="text-xs text-neutral-400 leading-relaxed">
+                        Passer à la ligne suivante rapidement.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Divider -->
+        <div class="divider"></div>
+
+        <!-- Section 6 : Affichage -->
+        <section class="py-24">
+            <p class="tag mb-4">Affichage</p>
+            <h2 class="font-heading text-3xl md:text-4xl font-medium tracking-tight text-white mb-12">
+                Zones d'affichage
+            </h2>
+
+            <div class="space-y-6">
+
+                <!-- Main gauche / droite -->
+                <div class="section-card p-6 md:p-8">
+                    <div class="flex items-start gap-4 mb-5">
+                        <div class="icon-box">
+                            <span class="iconify text-neutral-400" data-icon="lucide:hand" data-width="20"></span>
+                        </div>
+                        <div>
+                            <h3 class="font-heading text-lg font-medium tracking-tight text-white mb-2">
+                                Zone d'affichage « Main gauche » et « Main droite »
+                            </h3>
+                            <p class="text-sm text-neutral-400 leading-relaxed">
+                                Affiche en <span class="text-blue-400 font-medium">bleu</span> la ligne et le raccourci doigt ainsi que la ligne suivante en <span class="text-neutral-500 font-medium">gris</span> et <span class="text-red-400 font-medium">rouge</span> pour la modification à venir.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Visual demo -->
+                    <div class="grid grid-cols-2 gap-4 mt-6">
+                        <div class="bg-neutral-900/60 rounded-lg p-4 border border-neutral-800">
+                            <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">Main gauche</p>
+                            <p class="text-blue-400 text-sm font-medium">Ligne actuelle · Raccourci</p>
+                            <p class="text-neutral-500 text-sm mt-1">Ligne suivante · <span class="text-red-400">Modification</span></p>
+                        </div>
+                        <div class="bg-neutral-900/60 rounded-lg p-4 border border-neutral-800">
+                            <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">Main droite</p>
+                            <p class="text-blue-400 text-sm font-medium">Ligne actuelle · Raccourci</p>
+                            <p class="text-neutral-500 text-sm mt-1">Ligne suivante · <span class="text-red-400">Modification</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prochain changement -->
+                <div class="section-card p-6 md:p-8">
+                    <div class="flex items-start gap-4">
+                        <div class="icon-box">
+                            <span class="iconify text-neutral-400" data-icon="lucide:clock" data-width="20"></span>
+                        </div>
+                        <div>
+                            <h3 class="font-heading text-lg font-medium tracking-tight text-white mb-2">Prochain changement</h3>
+                            <p class="text-sm text-neutral-400 leading-relaxed">
+                                Affiche un chrono décompte avant le prochain changement.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barre rapide -->
+                <div class="section-card p-6 md:p-8">
+                    <div class="flex items-start gap-4 mb-5">
+                        <div class="icon-box">
+                            <span class="iconify text-neutral-400" data-icon="lucide:gauge" data-width="20"></span>
+                        </div>
+                        <div>
+                            <h3 class="font-heading text-lg font-medium tracking-tight text-white mb-2">Barre rapide de changement</h3>
+                            <p class="text-sm text-neutral-400 leading-relaxed">
+                                Affiche le numéro de ligne — Les symboles : démarrer · pause/continue · précédent · suivant.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Visual bar demo -->
+                    <div class="flex items-center gap-3 bg-neutral-900/60 rounded-lg p-3 border border-neutral-800 mt-4">
+                        <span class="text-xs font-mono text-neutral-500 w-8 text-center">03</span>
+                        <span class="text-neutral-700">│</span>
+                        <span class="iconify text-green-400 cursor-pointer hover:text-green-300 transition-colors" data-icon="lucide:play" data-width="16"></span>
+                        <span class="iconify text-neutral-400 cursor-pointer hover:text-white transition-colors" data-icon="lucide:pause" data-width="16"></span>
+                        <span class="iconify text-neutral-400 cursor-pointer hover:text-white transition-colors" data-icon="lucide:skip-back" data-width="16"></span>
+                        <span class="iconify text-neutral-400 cursor-pointer hover:text-white transition-colors" data-icon="lucide:skip-forward" data-width="16"></span>
+                    </div>
+                </div>
+
+                <!-- Ligne mémo -->
+                <div class="section-card p-6 md:p-8">
+                    <div class="flex items-start gap-4">
+                        <div class="icon-box">
+                            <span class="iconify text-neutral-400" data-icon="lucide:bookmark" data-width="20"></span>
+                        </div>
+                        <div>
+                            <h3 class="font-heading text-lg font-medium tracking-tight text-white mb-2">Ligne mémo pour les raccourcis doigts</h3>
+                            <p class="text-sm text-neutral-400 leading-relaxed">
+                                Lorsque deux verrous sont indiqués pour une même main, seul le raccourci du <span class="text-white font-medium">premier verrou</span> sera mentionné.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Divider -->
+        <div class="divider"></div>
+
+        <!-- Astuce -->
+        <section class="py-24">
+            <div class="tip-banner p-6 md:p-8">
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-lg bg-green-400/10 flex items-center justify-center flex-shrink-0">
+                        <span class="iconify text-green-400" data-icon="lucide:lightbulb" data-width="20"></span>
+                    </div>
+                    <div>
+                        <h3 class="font-heading text-lg font-medium tracking-tight text-green-400 mb-2">
+                            Astuce pour les utilisateurs d'ordinateur
+                        </h3>
+                        <p class="text-sm text-neutral-400 leading-relaxed">
+                            Utilisez les raccourcis clavier pour une navigation plus fluide pendant la lecture de vos séquences.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="border-t border-neutral-800 py-12 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p class="text-xs text-neutral-600 uppercase tracking-widest font-semibold">
+                jsj.html — Guide
+            </p>
+            <p class="text-xs text-neutral-600">
+                Documentation de fonctionnement
+            </p>
+        </footer>
+
+    </div>
+
+</body>
+</html>
