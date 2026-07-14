@@ -1354,7 +1354,7 @@ Flux de : droite
                 if (isTextOnlyStep(sequence[currentIndex])) {
                     intervalTime = 4;
                 } else {
-                    intervalTime = getIntervalSeconds(); 
+                    intervalTime = getIntervalSeconds();
                 }
                 
                 if (isNaN(intervalTime) || intervalTime <= 0) {
@@ -1363,101 +1363,92 @@ Flux de : droite
                 }
                 
                 lastUpdateTime = Date.now() - (savedElapsed * 1000);
-                
-                clickWarningPlayed = false; 
-                
                 intervalId = setInterval(tick, tickRate);
                 setButtonStates('playing');
             }
         }
 
-        function togglePauseContinue() {
-            if (intervalId) {
-                pauseAnimation();
-            } else if (sequence.length > 0) {
-                continueAnimation();
-            }
-        }
-
-        function stepBack() {
+        function goToStep(newIndex) {
             if (sequence.length === 0) return;
-            initAudio();
-            if (enableClick) playClickClick();
-            if (window.speechSynthesis) window.speechSynthesis.cancel();
             
-            currentIndex = (currentIndex - 1 + sequence.length) % sequence.length;
-            savedElapsed = 0; 
-            updateDisplay(); 
-            lastUpdateTime = Date.now();
-            if (intervalId) {
-                clearInterval(intervalId);
-                intervalId = setInterval(tick, tickRate);
-            }
-        }
-
-        function stepForward() {
-            if (sequence.length === 0) return;
-            initAudio();
-            if (enableClick) playClickClick();
-            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            currentIndex = (newIndex + sequence.length) % sequence.length;
+            updateDisplay(true);
             
-            currentIndex = (currentIndex + 1) % sequence.length;
-            savedElapsed = 0; 
-            updateDisplay(true); 
-            lastUpdateTime = Date.now();
-            if (intervalId) {
-                clearInterval(intervalId);
-                intervalId = setInterval(tick, tickRate);
+            // Reset timer for the new step
+            if (isTextOnlyStep(sequence[currentIndex])) {
+                intervalTime = 4;
+            } else {
+                intervalTime = getIntervalSeconds();
             }
+            
+            savedElapsed = 0;
+            lastUpdateTime = Date.now();
+            countdownVal.textContent = formatTime(intervalTime);
+            progressBar.style.width = '0%';
         }
 
         // ==========================================
-        // ÉCOUTEURS D'ÉVÉNEMENTS (Boutons et Clavier)
+        // ÉCOUTEURS DES BOUTONS DE CONTRÔLE
         // ==========================================
         startBtn.addEventListener('click', startAnimation);
         miniStartBtn.addEventListener('click', startAnimation);
-        
-        pauseBtn.addEventListener('click', togglePauseContinue);
-        miniPauseBtn.addEventListener('click', togglePauseContinue);
-        
-        prevBtn.addEventListener('click', stepBack);
-        miniPrevBtn.addEventListener('click', stepBack);
-        
-        nextBtn.addEventListener('click', stepForward);
-        miniNextBtn.addEventListener('click', stepForward);
 
-        // Raccourcis clavier
+        pauseBtn.addEventListener('click', () => {
+            if (intervalId) {
+                pauseAnimation();
+            } else {
+                continueAnimation();
+            }
+        });
+
+        miniPauseBtn.addEventListener('click', () => {
+            if (intervalId) {
+                pauseAnimation();
+            } else {
+                continueAnimation();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => goToStep(currentIndex - 1));
+        nextBtn.addEventListener('click', () => goToStep(currentIndex + 1));
+        miniPrevBtn.addEventListener('click', () => goToStep(currentIndex - 1));
+        miniNextBtn.addEventListener('click', () => goToStep(currentIndex + 1));
+
+        // ==========================================
+        // ÉCOUTEURS POUR LES BOUTONS RACCOURCIS ET LOCALISATION
+        // ==========================================
+        raccourcisBtn.addEventListener('click', () => {
+            window.open('https://github.com/LouetteChristine/Website/tree/main/2026_07_02_jsj#:~:text=JSJ%5FMAIN%2Ehtml', '_blank');
+        });
+
+        localisationBtn.addEventListener('click', () => {
+            window.open('https://github.com/LouetteChristine/Website/tree/main/2026_07_02_jsj#:~:text=JSJ%5FMAIN%2Ehtml', '_blank');
+        });
+
+        // ==========================================
+        // ÉCOUTEURS CLAVIER (RACCOURCIS)
+        // ==========================================
         document.addEventListener('keydown', (e) => {
-            // Ne pas déclencher si l'utilisateur tape dans le textarea ou un input
+            // Empêche l'action si l'utilisateur tape dans la zone de texte ou un input
             if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
 
             if (e.code === 'Space') {
                 e.preventDefault();
-                if (sequence.length === 0) {
-                    startAnimation();
-                } else {
-                    togglePauseContinue();
+                if (startBtn.disabled && !pauseBtn.disabled) {
+                    pauseBtn.click();
+                } else if (!startBtn.disabled && pauseBtn.disabled) {
+                    startBtn.click();
                 }
             } else if (e.code === 'ArrowLeft') {
                 e.preventDefault();
-                stepBack();
+                if (!prevBtn.disabled) prevBtn.click();
             } else if (e.code === 'ArrowRight') {
                 e.preventDefault();
-                stepForward();
+                if (!nextBtn.disabled) nextBtn.click();
             } else if (e.code === 'Escape') {
                 if (document.fullscreenElement) exitFullscreen();
             }
         });
-
-        // Actions des boutons Raccourcis et Localisation (à adapter selon tes besoins)
-        raccourcisBtn.addEventListener('click', () => {
-            alert("Raccourcis clavier :\nEspace : Pause/Continuer\nFlèche Gauche : Précédent\nFlèche Droite : Suivant\nÉchap : Quitter le plein écran");
-        });
-
-        localisationBtn.addEventListener('click', () => {
-            alert("Fonctionnalité de localisation à définir.\n(Masquer/Afficher les infos cerveau/organes ?)");
-        });
-
     </script>
 </body>
 </html>
