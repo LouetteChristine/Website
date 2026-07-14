@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mode d'emploi JSJ</title>
+<style>
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0 20px;
+    line-height: 1.6;
+    color: #2b2b2b;
+    background: #fdfdfb;
+  }
+  h1 {
+    text-align: center;
+    color: #1a1a1a;
+    border-bottom: 3px solid #6b7f6b;
+    padding-bottom: 15px;
+    margin-bottom: 35px;
+  }
+  h2 {
+    color: #4a5d4a;
+    border-left: 4px solid #6b7f6b;
+    padding-left: 12px;
+    margin-top: 30px;
+  }
+  .entry {
+    margin-bottom: 18px;
+  }
+  .entry strong {
+    color: #3d4d3d;
+  }
+  ul {
+    margin-top: 6px;
+    padding-left: 25px;
+  }
+  li {
+    margin-bottom: 6px;
+  }
+  .note {
+    background: #f0f2ec;
+    border-left: 4px solid #a3b18a;
+    padding: 12px 16px;
+    margin: 20px 0;
+    font-style: italic;
+  }
+  .astuce {
+    margin-top: 40px;
+    padding: 15px;
+    background: #eef2e6;
+    border-radius: 6px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<h1>Mode d'emploi JSJ</h1>
+
+<h2>Fonctions générales</h2>
+
+<div class="entry"><strong>Raccourcis :</strong> affiche dans une nouvelle fenêtre les raccourcis des verrous sur le dessin d'une main.</div>
+
+<div class="entry"><strong>Localisation :</strong> affiche dans une nouvelle fenêtre les emplacements des 26 verrous de sauvegarde de l'énergie.</div>
+
+<div class="entry"><strong>Importer :</strong> permet d'importer un fichier au format texte (txt).</div>
+
+<div class="entry"><strong>Exporter :</strong> exporte la séquence dans le dossier « Téléchargement ».</div>
+
+<div class="entry"><strong>Reset :</strong> permet d'utiliser un chrono uniquement sur 20 lignes ou en boucle si la case est cochée.</div>
+
+<h2>Zone modifiable pour l'encodage de séquence</h2>
+
+<ul>
+  <li>Si la ligne commence par « * », elle ne sera pas lue.</li>
+  <li>Si la ligne comprend un chiffre, un raccourci doigt sera affiché et le chrono sera activé.</li>
+  <li>Si la ligne ne comprend pas de chiffre et que le chrono doit être activé :
+    <ul>
+      <li>si « : » dans la ligne, ajouter un point fin de ligne ;</li>
+      <li>si pas de chiffre et pas de « : », ajouter « :0 ».</li>
+    </ul>
+  </li>
+</ul>
+
+<h2>Paramètres du chrono et de la séquence</h2>
+
+<div class="entry"><strong>Durée :</strong> en minute et seconde pour le chrono.</div>
+
+<div class="entry"><strong>Boucle :</strong> permet de boucler la séquence.</div>
+
+<div class="entry"><strong>Clic :</strong> permet d'entendre un clic-clic 5 secondes avant le changement de ligne et 5 clic en fin de séquence.</div>
+
+<div class="entry"><strong>Voix :</strong> active une voix qui lit les changements et raccourcis s'il y en a.
+  <div class="note">Définir qui lit (sur GSM moins de choix), la vitesse (j'aime 0,7) et le volume. Suivant l'appareil que vous utilisez, certains paramètres peuvent ne pas fonctionner.</div>
+</div>
+
+<div class="entry"><strong>Plein écran :</strong> permet de basculer vers un plein écran (sans les variables d'ajustement).</div>
+
+<h2>Commandes de lecture</h2>
+
+<div class="entry"><strong>Démarrer :</strong> démarre la séquence.</div>
+
+<div class="entry"><strong>Pause / continue</strong></div>
+
+<div class="entry"><strong>Précédent :</strong> permet de réentendre la ligne précédente rapidement.</div>
+
+<div class="entry"><strong>Suivant :</strong> permet de passer à la ligne suivante rapidement.</div>
+
+<h2>Zones d'affichage</h2>
+
+<div class="entry"><strong>Zone d'affichage « Main gauche » et « Main droite » :</strong> affiche en bleu la ligne et le raccourci doigt, ainsi que la ligne suivante en gris et rouge pour la modification à venir.</div>
+
+<div class="entry"><strong>Prochain changement :</strong> affiche un chrono décompte.</div>
+
+<div class="entry"><strong>Barre rapide de changement :</strong> affiche le numéro de ligne - les symboles : démarrer - pause/continue - précédent - suivant.</div>
+
+<div class="entry"><strong>Ligne mémo pour les raccourcis doigts :</strong> lorsque deux verrous sont indiqués pour une même main, seul le raccourci du premier verrou sera mentionné.</div>
+
+<div class="astuce">
+Astuce pour les utilisateurs d'ordinateur.
+</div>
+
+</body>
+</html>
