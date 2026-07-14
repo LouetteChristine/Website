@@ -505,6 +505,7 @@
             <div class="btn-group">
                 <button type="button" id="raccourcisBtn">Raccourcis</button>
                 <button type="button" id="localisationBtn">Localisation</button>
+                <button type="button" id="infoBtn">Info</button> <!-- BOUTON INFO DÉPLACÉ ICI -->
             </div>
             
             <!-- Groupe 2 : Fichiers -->
@@ -513,7 +514,6 @@
                 <input type="file" id="fileInput" accept=".txt">
                 <button type="button" id="exportBtn">Exporter</button>
                 <button type="button" id="resetBtn">Reset</button>
-                <button type="button" id="infoBtn">Info</button> <!-- NOUVEAU BOUTON INFO -->
             </div>
         </div>
 
@@ -668,7 +668,7 @@ Flux de : droite
         
         const raccourcisBtn = document.getElementById('raccourcisBtn');
         const localisationBtn = document.getElementById('localisationBtn');
-        const infoBtn = document.getElementById('infoBtn'); // NOUVELLE REFERENCE
+        const infoBtn = document.getElementById('infoBtn'); // REFERENCE CONSERVÉE
         
         const miniPrevBtn = document.getElementById('miniPrevBtn');
         const miniStartBtn = document.getElementById('miniStartBtn');
